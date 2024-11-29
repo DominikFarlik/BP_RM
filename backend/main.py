@@ -142,9 +142,12 @@ class Formula:
                     # print("Negated literal: " + str(clauses[0]))
                     pass
 
-                elif len(clauses[0]) > 1:
-                    # print("Clause: " + str(clauses[0]))
-                    pass
+                elif len(clauses[0]) > 2 and Operator.IMPLICATION.value in clauses[0]:
+                    new_lit = ""
+                    for z, lit in enumerate(clauses[0]):
+                        if lit == Operator.IMPLICATION.value:
+                            new_lit += Operator.NOT.value + self.clauses[x][0][z - 1] + Operator.OR.value + self.clauses[x][0][z + 1]
+                            self.clauses[x][0] = new_lit
 
     def convert_to_NNF(self):
         """Use De Morgan's laws to remove negations"""
@@ -167,8 +170,22 @@ class Formula:
                                 self.clauses[x][0][y][0] = new_lit
 
             if isinstance(clauses[0], str):
-                if len(clauses[0]) == 1 and clauses[0] in Operator:
-                    pass
+                if len(clauses[0]) == 1 and clauses[0] in Operator.NOT.value:
+                    self.clauses.pop(x)
+                    if len(self.clauses[x][0]) > 1:
+                        new_lit = ""
+                        for y, lit in enumerate(self.clauses[x][0]):
+                            if lit.isalpha():
+                                if self.clauses[x][0][y - 1] != Operator.NOT.value:
+                                    new_lit += Operator.NOT.value
+                                new_lit += lit
+                            if lit == Operator.OR.value:
+                                new_lit += Operator.AND.value
+                            if lit == Operator.AND.value:
+                                new_lit += Operator.OR.value
+                            if lit == Operator.NOT.value:
+                                pass
+                        self.clauses[x] = [new_lit]
 
                 elif len(clauses[0]) == 1 and clauses[0].isalpha:
                     pass
@@ -181,7 +198,7 @@ class Formula:
 
 
 if __name__ == "__main__":
-    input_formula = "(¬(P∨Q)→R)∧¬A∧(¬R∨S)∧(¬(W∧A)∨B∨(A∨D))"
+    input_formula = "¬(A→B)∨(B∧¬C)"
     print("User input:\n" + input_formula + "\n")
     formula1 = Formula(input_formula)
     print("First split cycle:\n" + str(formula1) + "\n")
