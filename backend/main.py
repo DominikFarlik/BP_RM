@@ -13,6 +13,26 @@ class Formula:
     def __init__(self, formula):
         self.clauses = self.split_to_clauses_1st_cycle(formula)
 
+    def __str__(self):
+        formula = ""
+        for x in self.clauses:
+            if isinstance(x[0], str):
+                if len(x[0]) > 2:
+                    formula += "(" + x[0] + ")"
+                elif len(x[0]) == 2:
+                    formula += x[0]
+                elif len(x[0]) == 1:
+                    formula += x[0]
+            if isinstance(x[0], list):
+                formula += "("
+                for y in x[0]:
+                    if len(y[0]) > 1:
+                        formula += "(" + y[0] + ")"
+                    elif len(y[0]) == 1:
+                        formula += y[0]
+                formula += ")"
+        return formula
+
     @staticmethod
     def get_first_clause_from_bracket(clause, index):
         """Returns clause from first bracket of larger clause"""
@@ -164,10 +184,10 @@ if __name__ == "__main__":
     input_formula = "(¬(P∨Q)→R)∧¬A∧(¬R∨S)∧(¬(W∧A)∨B∨(A∨D))"
     print("User input:\n" + input_formula + "\n")
     formula1 = Formula(input_formula)
-    print("First split cycle:\n" + str(formula1.clauses) + "\n")
+    print("First split cycle:\n" + str(formula1) + "\n")
     formula1.split_to_clauses_2nd_cycle()
-    print("Second split cycle:\n" + str(formula1.clauses) + "\n")
+    print("Second split cycle:\n" + str(formula1) + "\n")
     formula1.remove_implications_and_equivalences()  # TODO: finish  func
-    print("Removed implications:\n" + str(formula1.clauses) + "\n")
+    print("Removed implications:\n" + str(formula1) + "\n")
     formula1.convert_to_NNF()
-    print("Converted to NNF:\n" + str(formula1.clauses) + "\n")
+    print("Converted to NNF:\n" + str(formula1) + "\n")
