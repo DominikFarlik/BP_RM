@@ -96,7 +96,7 @@ class Formula:
                 if not_changed_clause:
                     self.clauses[x][y] = not_changed_clause
 
-    def remove_implications(self):
+    def remove_implications_and_equivalences(self):
         """Remove implication from formula"""
         for x, clauses in enumerate(self.clauses):
             if isinstance(clauses[0], list):
@@ -127,16 +127,47 @@ class Formula:
                     pass
 
     def convert_to_NNF(self):
-        """Use De Morgan laws to remove negations"""
-        pass
+        """Use De Morgan's laws to remove negations"""
+        for x, clauses in enumerate(self.clauses):
+            if isinstance(clauses[0], list):
+                for y, clause in enumerate(clauses[0]):
+                    if Operator.NOT.value in clause[0]:
+                        if len(clause[0]) == 1:
+                            self.clauses[x][0].pop(y)
+
+                            if len(self.clauses[x][0][y][0]):
+                                new_lit = ""
+                                for lit in self.clauses[x][0][y][0]:
+                                    if lit.isalpha():
+                                        new_lit += Operator.NOT.value + lit
+                                    if lit == Operator.OR.value:
+                                        new_lit += Operator.AND.value
+                                    if lit == Operator.AND.value:
+                                        new_lit += Operator.OR.value
+                                self.clauses[x][0][y][0] = new_lit
+
+            if isinstance(clauses[0], str):
+                if len(clauses[0]) == 1 and clauses[0] in Operator:
+                    pass
+
+                elif len(clauses[0]) == 1 and clauses[0].isalpha:
+                    pass
+
+                elif len(clauses[0]) == 2 and clauses[0][0] == Operator.NOT.value:
+                    pass
+
+                elif len(clauses[0]) > 1:
+                    pass
 
 
 if __name__ == "__main__":
-    input_formula = "(¬(P∨Q)→R)∧¬A∧(¬R∨S)∧((W∧A)∨B∨(A∨D))"
+    input_formula = "(¬(P∨Q)→R)∧¬A∧(¬R∨S)∧(¬(W∧A)∨B∨(A∨D))"
     print("User input:\n" + input_formula + "\n")
     formula1 = Formula(input_formula)
     print("First split cycle:\n" + str(formula1.clauses) + "\n")
     formula1.split_to_clauses_2nd_cycle()
     print("Second split cycle:\n" + str(formula1.clauses) + "\n")
-    formula1.remove_implications()  # TODO: finish  func
+    formula1.remove_implications_and_equivalences()  # TODO: finish  func
     print("Removed implications:\n" + str(formula1.clauses) + "\n")
+    formula1.convert_to_NNF()
+    print("Converted to NNF:\n" + str(formula1.clauses) + "\n")
