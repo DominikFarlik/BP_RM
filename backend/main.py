@@ -1,4 +1,5 @@
 from enum import Enum
+from helper_functions import *
 
 
 class Operator(Enum):
@@ -23,17 +24,17 @@ class Formula:
                     formula += x[0]
                 elif len(x[0]) == 1:
                     formula += x[0]
-                else:
-                    formula += x[0]
+
             if isinstance(x[0], list):
                 formula += "("
                 for y in x[0]:
-                    if len(y[0]) > 1:
+                    if len(y[0]) > 2:
                         formula += "(" + y[0] + ")"
                     elif len(y[0]) == 1:
                         formula += y[0]
-                    else:
+                    elif len(y[0]) == 2:
                         formula += y[0]
+
                 formula += ")"
         print(self.clauses)
         return formula
@@ -121,56 +122,20 @@ class Formula:
                 if not_changed_clause:
                     self.clauses[x][y] = not_changed_clause
 
-    def remove_implications_and_equivalences(self):
+    def remove_implications_and_equivalences(self):  # TODO: Add equivalence remove
         """Remove implication from formula"""
         for x, clauses in enumerate(self.clauses):
             if isinstance(clauses[0], list):
                 for y, clause in enumerate(clauses[0]):
                     if Operator.IMPLICATION.value in clause[0]:
-                        if len(clause[0]) == 1:
-                            self.clauses[x][0][y] = [Operator.OR.value]
-                            if self.clauses[x][0][y - 2] == [Operator.NOT.value]:
-                                self.clauses[x][0].pop(y - 2)
-                            else:
-                                self.clauses.insert(x - 2, [Operator.NOT.value])
-
-                        else:
-                            new_clause = ""
-                            for z, lit in enumerate(clause[0]):
-                                if lit == Operator.IMPLICATION.value:
-                                    if z > 2 and self.clauses[x][0][y][0][z - 2] == Operator.NOT.value:
-                                        new_clause += self.clauses[x][0][y][0][z - 1]
-                                    else:
-                                        new_clause += Operator.NOT.value + self.clauses[x][0][y][0][z - 1]
-
-                                    new_clause += Operator.OR.value
-
-                                    if z < len(clause[0]) - 1 and self.clauses[x][0][y][0][z + 1] == Operator.NOT.value:
-                                        new_clause += Operator.NOT.value + self.clauses[x][0][y][0][z + 2]
-                                    else:
-                                        new_clause += self.clauses[x][0][y][0][z + 1]
-
-                            self.clauses[x][0][y][0] = new_clause
-
+                        if len(clause[0]) == 1: #  Implication on 1 layer between 2 lists
+                            self.clauses[x][0] = remove_implication_between_lists(clauses[0])
+                        else: #  Implication in 2 layer bracket
+                            self.clauses[x][0][y][0] = remove_implication_in_string(clause[0])
 
             elif isinstance(clauses[0], str) and Operator.IMPLICATION.value in clauses[0]:
                 if len(clauses[0]) > 2:
-                    new_clause = ""
-                    for z, lit in enumerate(clauses[0]):
-                        if lit == Operator.IMPLICATION.value:
-                            if self.clauses[x][0][z - 2] == Operator.NOT.value:
-                                new_clause += self.clauses[x][0][z - 1]
-                            else:
-                                new_clause += Operator.NOT.value + self.clauses[x][0][z - 1]
-
-                            new_clause += Operator.OR.value
-
-                            if self.clauses[x][0][z + 1].isalpha():
-                                new_clause += self.clauses[x][0][z + 1]
-                            elif self.clauses[x][0][z + 1] == Operator.NOT.value:
-                                new_clause += self.clauses[x][0][z + 1:z + 3]
-
-                    self.clauses[x] = [new_clause]
+                    self.clauses[x] = [remove_implication_in_string(clauses[0])]
 
                 elif len(clauses[0]) == 1:
                     self.clauses[x][0] = Operator.OR.value
@@ -202,15 +167,17 @@ class Formula:
                     if len(self.clauses[x][0]) > 1:
                         new_lit = ""
                         for y, lit in enumerate(self.clauses[x][0]):
-                            if lit.isalpha():
+                            if isinstance(lit, list):
+                                pass  # TODO: Make solution for negating bracket in bracket
+                            elif lit.isalpha():
                                 if self.clauses[x][0][y - 1] != Operator.NOT.value:
                                     new_lit += Operator.NOT.value
                                 new_lit += lit
-                            if lit == Operator.OR.value:
+                            elif lit == Operator.OR.value:
                                 new_lit += Operator.AND.value
-                            if lit == Operator.AND.value:
+                            elif lit == Operator.AND.value:
                                 new_lit += Operator.OR.value
-                            if lit == Operator.NOT.value:
+                            elif lit == Operator.NOT.value:
                                 pass
                         self.clauses[x] = [new_lit]
 
@@ -239,7 +206,9 @@ class Formula:
                 else:
                     new_clause = []
                     for y, lit in enumerate(self.clauses[x + 1][0]):
-                        if lit.isalpha() and self.clauses[x + 1][0][y - 1] == Operator.NOT.value:
+                        if isinstance(lit, list):
+                            pass # TODO Make solution for bracket in bracket
+                        elif lit.isalpha() and self.clauses[x + 1][0][y - 1] == Operator.NOT.value:
                             new_clause.append([self.clauses[x - 1][0] + Operator.OR.value + self.clauses[x + 1][0][y - 1:y + 1]])
                             if y < len(self.clauses) - 1:
                                 new_clause.append([Operator.AND.value])
@@ -248,10 +217,11 @@ class Formula:
                             if y < len(self.clauses) - 1:
                                 new_clause.append([Operator.AND.value])
 
-                    del self.clauses[x - 1:x + 2]
-                    self.clauses.insert(x - 1, new_clause[0])
-                    self.clauses.insert(x, new_clause[1])  # TODO: SIMPLIFY
-                    self.clauses.insert(x + 1, new_clause[2])
+                    if len(new_clause) > 2:
+                        del self.clauses[x - 1:x + 2]
+                        self.clauses.insert(x - 1, new_clause[0])
+                        self.clauses.insert(x, new_clause[1])  # TODO: SIMPLIFY
+                        self.clauses.insert(x + 1, new_clause[2])
 
     def is_formula_in_cnf(self):
         """Check if formula is in CNF"""
@@ -274,7 +244,7 @@ class Formula:
 
 
 if __name__ == "__main__":
-    input_formula = "(A∨(B→C))∧(¬D∨(E∧F))"
+    input_formula = "(A→D)∨(A∨(B→C))→(¬A→(E∧F))"
     print("User input:\n" + input_formula + "\n")
     formula1 = Formula(input_formula)
     print("First split cycle:\n" + str(formula1) + "\n")
@@ -282,12 +252,12 @@ if __name__ == "__main__":
     print("Second split cycle:\n" + str(formula1) + "\n")
     formula1.remove_implications_and_equivalences()  # TODO: finish  func
     print("Removed implications:\n" + str(formula1) + "\n")
-    formula1.convert_to_NNF()  # TODO: finish  func
-    print("Converted to NNF:\n" + str(formula1) + "\n")
-    formula1.disjunction_distribution()
-    print("Disjunction distribution:\n" + str(formula1) + "\n")
-    if formula1.is_formula_in_cnf():
-        formula1.negate_formula_for_resolution()
-        # print("Negate each clause for resolution:\n" + str(formula1) + "\n")
-        print("Resolution")
-        formula1.resolute_formula()
+    #formula1.convert_to_NNF()  # TODO: finish  func
+    #print("Converted to NNF:\n" + str(formula1) + "\n")
+    #formula1.disjunction_distribution()
+    #print("Disjunction distribution:\n" + str(formula1) + "\n")
+    #if formula1.is_formula_in_cnf():
+    #    formula1.negate_formula_for_resolution()
+    #    # print("Negate each clause for resolution:\n" + str(formula1) + "\n")
+    #    print("Resolution")
+    #    formula1.resolute_formula()
