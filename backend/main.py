@@ -23,12 +23,16 @@ class Formula:
                     formula += x[0]
                 elif len(x[0]) == 1:
                     formula += x[0]
+                else:
+                    formula += x[0]
             if isinstance(x[0], list):
                 formula += "("
                 for y in x[0]:
                     if len(y[0]) > 1:
                         formula += "(" + y[0] + ")"
                     elif len(y[0]) == 1:
+                        formula += y[0]
+                    else:
                         formula += y[0]
                 formula += ")"
         print(self.clauses)
@@ -130,6 +134,25 @@ class Formula:
                             else:
                                 self.clauses.insert(x - 2, [Operator.NOT.value])
 
+                        else:
+                            new_clause = ""
+                            for z, lit in enumerate(clause[0]):
+                                if lit == Operator.IMPLICATION.value:
+                                    if z > 2 and self.clauses[x][0][y][0][z - 2] == Operator.NOT.value:
+                                        new_clause += self.clauses[x][0][y][0][z - 1]
+                                    else:
+                                        new_clause += Operator.NOT.value + self.clauses[x][0][y][0][z - 1]
+
+                                    new_clause += Operator.OR.value
+
+                                    if z < len(clause[0]) - 1 and self.clauses[x][0][y][0][z + 1] == Operator.NOT.value:
+                                        new_clause += Operator.NOT.value + self.clauses[x][0][y][0][z + 2]
+                                    else:
+                                        new_clause += self.clauses[x][0][y][0][z + 1]
+
+                            self.clauses[x][0][y][0] = new_clause
+
+
             elif isinstance(clauses[0], str) and Operator.IMPLICATION.value in clauses[0]:
                 if len(clauses[0]) > 2:
                     new_clause = ""
@@ -213,6 +236,22 @@ class Formula:
 
                             elif self.clauses[x - 1][0][y - 1].isalpha():
                                 pass
+                else:
+                    new_clause = []
+                    for y, lit in enumerate(self.clauses[x + 1][0]):
+                        if lit.isalpha() and self.clauses[x + 1][0][y - 1] == Operator.NOT.value:
+                            new_clause.append([self.clauses[x - 1][0] + Operator.OR.value + self.clauses[x + 1][0][y - 1:y + 1]])
+                            if y < len(self.clauses) - 1:
+                                new_clause.append([Operator.AND.value])
+                        elif lit.isalpha():
+                            new_clause.append([self.clauses[x - 1][0] + Operator.OR.value + self.clauses[x + 1][0][y]])
+                            if y < len(self.clauses) - 1:
+                                new_clause.append([Operator.AND.value])
+
+                    del self.clauses[x - 1:x + 2]
+                    self.clauses.insert(x - 1, new_clause[0])
+                    self.clauses.insert(x, new_clause[1])  # TODO: SIMPLIFY
+                    self.clauses.insert(x + 1, new_clause[2])
 
     def is_formula_in_cnf(self):
         """Check if formula is in CNF"""
@@ -234,8 +273,8 @@ class Formula:
 
 
 
-if __name__ == "__main__":  # TODO: simplify storing literals as str instead of list
-    input_formula = "(A→B)∨(¬B→¬A)"
+if __name__ == "__main__":
+    input_formula = "(A∨(B→C))∧(¬D∨(E∧F))"
     print("User input:\n" + input_formula + "\n")
     formula1 = Formula(input_formula)
     print("First split cycle:\n" + str(formula1) + "\n")
@@ -249,6 +288,6 @@ if __name__ == "__main__":  # TODO: simplify storing literals as str instead of 
     print("Disjunction distribution:\n" + str(formula1) + "\n")
     if formula1.is_formula_in_cnf():
         formula1.negate_formula_for_resolution()
-        print("Negate each clause for resolution:\n" + str(formula1) + "\n")
+        # print("Negate each clause for resolution:\n" + str(formula1) + "\n")
         print("Resolution")
         formula1.resolute_formula()
