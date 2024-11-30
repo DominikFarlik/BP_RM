@@ -31,6 +31,7 @@ class Formula:
                     elif len(y[0]) == 1:
                         formula += y[0]
                 formula += ")"
+        print(self.clauses)
         return formula
 
     @staticmethod
@@ -129,25 +130,28 @@ class Formula:
                             else:
                                 self.clauses.insert(x - 2, [Operator.NOT.value])
 
-            if isinstance(clauses[0], str):
-                if len(clauses[0]) == 1 and clauses[0] in Operator:
-                    # print("Operator: " + str(clauses[0]))
-                    pass
-
-                elif len(clauses[0]) == 1 and clauses[0].isalpha:
-                    # print("Literal: " + str(clauses[0]))
-                    pass
-
-                elif len(clauses[0]) == 2 and clauses[0][0] == Operator.NOT.value:
-                    # print("Negated literal: " + str(clauses[0]))
-                    pass
-
-                elif len(clauses[0]) > 2 and Operator.IMPLICATION.value in clauses[0]:
-                    new_lit = ""
+            elif isinstance(clauses[0], str) and Operator.IMPLICATION.value in clauses[0]:
+                if len(clauses[0]) > 2:
+                    new_clause = ""
                     for z, lit in enumerate(clauses[0]):
                         if lit == Operator.IMPLICATION.value:
-                            new_lit += Operator.NOT.value + self.clauses[x][0][z - 1] + Operator.OR.value + self.clauses[x][0][z + 1]
-                            self.clauses[x][0] = new_lit
+                            if self.clauses[x][0][z - 2] == Operator.NOT.value:
+                                new_clause += self.clauses[x][0][z - 1]
+                            else:
+                                new_clause += Operator.NOT.value + self.clauses[x][0][z - 1]
+
+                            new_clause += Operator.OR.value
+
+                            if self.clauses[x][0][z + 1].isalpha():
+                                new_clause += self.clauses[x][0][z + 1]
+                            elif self.clauses[x][0][z + 1] == Operator.NOT.value:
+                                new_clause += self.clauses[x][0][z + 1:z + 3]
+
+                    self.clauses[x] = [new_clause]
+
+                elif len(clauses[0]) == 1:
+                    self.clauses[x][0] = Operator.OR.value
+                    self.clauses.insert(x - 1, [Operator.NOT.value])
 
     def convert_to_NNF(self):
         """Use De Morgan's laws to remove negations"""
@@ -187,18 +191,51 @@ class Formula:
                                 pass
                         self.clauses[x] = [new_lit]
 
-                elif len(clauses[0]) == 1 and clauses[0].isalpha:
-                    pass
+    def disjunction_distribution(self):
+        """Remove disjunctions from formula to achieve CNF"""
+        for x, clauses in enumerate(self.clauses):
+            if clauses[0] == Operator.OR.value:
+                if len(self.clauses[x - 1][0]) > 2 >= len(self.clauses[x + 1][0]):
+                    new_clause = []
+                    for y, lit in enumerate(self.clauses[x - 1][0]):
+                        if lit == Operator.AND.value or lit == Operator.OR.value:
+                            if self.clauses[x - 1][0][y - 1].isalpha() and self.clauses[x - 1][0][y - 2] == Operator.NOT.value:
+                                new_clause.append([self.clauses[x - 1][0][y - 2:y] + Operator.OR.value + self.clauses[x + 1][0]])
+                                new_clause.append([Operator.AND.value])
+                                if self.clauses[x - 1][0][y + 2].isalpha() and self.clauses[x - 1][0][y + 1] == Operator.NOT.value:
+                                    new_clause.append([self.clauses[x - 1][0][y + 1:y + 3] + Operator.OR.value + self.clauses[x + 1][0]])
+                                    self.clauses.pop(x - 1)
+                                    self.clauses.pop(x - 1)
+                                    self.clauses.pop(x - 1)
+                                    self.clauses.insert(x - 1, new_clause[0])  # TODO: SIMPLIFY and make universal
+                                    self.clauses.insert(x, new_clause[1])
+                                    self.clauses.insert(x + 1, new_clause[2])
 
-                elif len(clauses[0]) == 2 and clauses[0][0] == Operator.NOT.value:
-                    pass
+                            elif self.clauses[x - 1][0][y - 1].isalpha():
+                                pass
 
-                elif len(clauses[0]) > 1:
-                    pass
+    def is_formula_in_cnf(self):
+        """Check if formula is in CNF"""
+        for clauses in self.clauses:
+            if clauses[0] == Operator.OR.value:
+                return False
+        return True
+
+    def negate_formula_for_resolution(self):
+        """Negate formula to decide its feasibility"""
+        pass
+
+    def resolute_formula(self):
+        """Use resolution method to get conclusion if formula is feasible"""
+        for x, clauses in enumerate(self.clauses):
+            if clauses[0] != Operator.AND.value:
+                print(clauses[0])
 
 
-if __name__ == "__main__":
-    input_formula = "¬(A→B)∨(B∧¬C)"
+
+
+if __name__ == "__main__":  # TODO: simplify storing literals as str instead of list
+    input_formula = "(A→B)∨(¬B→¬A)"
     print("User input:\n" + input_formula + "\n")
     formula1 = Formula(input_formula)
     print("First split cycle:\n" + str(formula1) + "\n")
@@ -206,5 +243,12 @@ if __name__ == "__main__":
     print("Second split cycle:\n" + str(formula1) + "\n")
     formula1.remove_implications_and_equivalences()  # TODO: finish  func
     print("Removed implications:\n" + str(formula1) + "\n")
-    formula1.convert_to_NNF()
+    formula1.convert_to_NNF()  # TODO: finish  func
     print("Converted to NNF:\n" + str(formula1) + "\n")
+    formula1.disjunction_distribution()
+    print("Disjunction distribution:\n" + str(formula1) + "\n")
+    if formula1.is_formula_in_cnf():
+        formula1.negate_formula_for_resolution()
+        print("Negate each clause for resolution:\n" + str(formula1) + "\n")
+        print("Resolution")
+        formula1.resolute_formula()
