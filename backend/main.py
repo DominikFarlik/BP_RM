@@ -17,7 +17,9 @@ class Formula:
     def __str__(self):
         formula = ""
         for x in self.clauses:
-            if isinstance(x[0], str):
+            if not x:
+                pass
+            elif isinstance(x[0], str):
                 if len(x[0]) > 2:
                     formula += "(" + x[0] + ")"
                 elif len(x[0]) == 2:
@@ -25,7 +27,7 @@ class Formula:
                 elif len(x[0]) == 1:
                     formula += x[0]
 
-            if isinstance(x[0], list):
+            elif isinstance(x[0], list):
                 formula += "("
                 for y in x[0]:
                     if len(y[0]) > 2:
@@ -128,58 +130,27 @@ class Formula:
             if isinstance(clauses[0], list):
                 for y, clause in enumerate(clauses[0]):
                     if Operator.IMPLICATION.value in clause[0]:
-                        if len(clause[0]) == 1: #  Implication on 1 layer between 2 lists
+                        if len(clause[0]) == 1:  # Implication on 2nd layer between 2 lists
                             self.clauses[x][0] = remove_implication_between_lists(clauses[0])
-                        else: #  Implication in 2 layer bracket
+                        else:  # Implication in 2nd layer bracket
                             self.clauses[x][0][y][0] = remove_implication_in_string(clause[0])
 
             elif isinstance(clauses[0], str) and Operator.IMPLICATION.value in clauses[0]:
-                if len(clauses[0]) > 2:
+                if len(clauses[0]) > 2:  # Implication in 1st layer bracket
                     self.clauses[x] = [remove_implication_in_string(clauses[0])]
 
-                elif len(clauses[0]) == 1:
+                elif len(clauses[0]) == 1:  # Implication on 1st layer between 2 lists
                     self.clauses[x][0] = Operator.OR.value
                     self.clauses.insert(x - 1, [Operator.NOT.value])
 
     def convert_to_NNF(self):
         """Use De Morgan's laws to remove negations"""
         for x, clauses in enumerate(self.clauses):
-            if isinstance(clauses[0], list):
-                for y, clause in enumerate(clauses[0]):
-                    if Operator.NOT.value in clause[0]:
-                        if len(clause[0]) == 1:
-                            self.clauses[x][0].pop(y)
+            if clauses[0] == Operator.NOT.value:  # Negation on 1st layer before bracket
+                self.clauses[x + 1] = [negate_clause(self.clauses[x + 1][0])]
+                remove_double_negations(self.clauses[x + 1][0])
+                self.clauses.pop(x)
 
-                            if len(self.clauses[x][0][y][0]):
-                                new_lit = ""
-                                for lit in self.clauses[x][0][y][0]:
-                                    if lit.isalpha():
-                                        new_lit += Operator.NOT.value + lit
-                                    if lit == Operator.OR.value:
-                                        new_lit += Operator.AND.value
-                                    if lit == Operator.AND.value:
-                                        new_lit += Operator.OR.value
-                                self.clauses[x][0][y][0] = new_lit
-
-            if isinstance(clauses[0], str):
-                if len(clauses[0]) == 1 and clauses[0] in Operator.NOT.value:
-                    self.clauses.pop(x)
-                    if len(self.clauses[x][0]) > 1:
-                        new_lit = ""
-                        for y, lit in enumerate(self.clauses[x][0]):
-                            if isinstance(lit, list):
-                                pass  # TODO: Make solution for negating bracket in bracket
-                            elif lit.isalpha():
-                                if self.clauses[x][0][y - 1] != Operator.NOT.value:
-                                    new_lit += Operator.NOT.value
-                                new_lit += lit
-                            elif lit == Operator.OR.value:
-                                new_lit += Operator.AND.value
-                            elif lit == Operator.AND.value:
-                                new_lit += Operator.OR.value
-                            elif lit == Operator.NOT.value:
-                                pass
-                        self.clauses[x] = [new_lit]
 
     def disjunction_distribution(self):
         """Remove disjunctions from formula to achieve CNF"""
@@ -252,12 +223,12 @@ if __name__ == "__main__":
     print("Second split cycle:\n" + str(formula1) + "\n")
     formula1.remove_implications_and_equivalences()  # TODO: finish  func
     print("Removed implications:\n" + str(formula1) + "\n")
-    #formula1.convert_to_NNF()  # TODO: finish  func
-    #print("Converted to NNF:\n" + str(formula1) + "\n")
-    #formula1.disjunction_distribution()
+    formula1.convert_to_NNF()  # TODO: finish  func
+    print("Converted to NNF:\n" + str(formula1) + "\n")
+    #formula1.disjunction_distribution()  # TODO: finish  func
     #print("Disjunction distribution:\n" + str(formula1) + "\n")
-    #if formula1.is_formula_in_cnf():
-    #    formula1.negate_formula_for_resolution()
+    #if formula1.is_formula_in_cnf():  # TODO: finish  func
+    #    formula1.negate_formula_for_resolution()  # TODO: finish  func
     #    # print("Negate each clause for resolution:\n" + str(formula1) + "\n")
     #    print("Resolution")
-    #    formula1.resolute_formula()
+    #    formula1.resolute_formula()  # TODO: finish  func
