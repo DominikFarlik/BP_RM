@@ -73,3 +73,43 @@ def remove_double_negations(clause):
         if "¬¬" in literal[0]:
             double_neg = literal[0].find("¬¬")
             clause[i] = [clause[i][0][:double_neg] + clause[i][0][double_neg + 2:]]
+
+
+def remove_redundant_brackets(formula):
+    for i, clauses in enumerate(formula):
+        clauses = clauses[0]
+        if isinstance(clauses, list):
+            operator = ""
+            isRedundant = True
+            for clause in clauses:
+                clause = clause[0]
+                for literal in clause:
+                    if literal == Operator.OR.value or literal == Operator.AND.value:
+                        if operator == "":
+                            operator = literal
+                        elif operator != literal:
+                            isRedundant = False
+                            break
+            if isRedundant:
+                new_clause = ""
+                for clause in clauses:
+                    new_clause += clause[0]
+                formula[i] = [new_clause]
+
+
+def distribute_layer2_brackets(formula):
+    for i, clauses in enumerate(formula):
+        clauses = clauses[0]
+        if isinstance(clauses, list):  # find layer2 brackets
+            if len(formula[i][0]) == 3:  #  find 2 literals with one operand
+                new_clause = []
+                lit_operator = formula[i][0][1][0]
+                if len(formula[i][0][0]) <= 2:
+                    lit1 = formula[i][0][0][0]
+                    clause_operator = formula[i][0][2][0][1]
+                    new_clause.append([lit1 + lit_operator + formula[i][0][2][0][0]])
+                    new_clause.append([clause_operator])
+                    new_clause.append([lit1 + lit_operator + formula[i][0][2][0][2]])
+                else:
+                    pass # TODO
+                formula[i] = [new_clause]

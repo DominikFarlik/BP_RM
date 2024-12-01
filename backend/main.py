@@ -151,48 +151,10 @@ class Formula:
                 remove_double_negations(self.clauses[x + 1][0])
                 self.clauses.pop(x)
 
-
     def disjunction_distribution(self):
         """Remove disjunctions from formula to achieve CNF"""
-        for x, clauses in enumerate(self.clauses):
-            if clauses[0] == Operator.OR.value:
-                if len(self.clauses[x - 1][0]) > 2 >= len(self.clauses[x + 1][0]):
-                    new_clause = []
-                    for y, lit in enumerate(self.clauses[x - 1][0]):
-                        if lit == Operator.AND.value or lit == Operator.OR.value:
-                            if self.clauses[x - 1][0][y - 1].isalpha() and self.clauses[x - 1][0][y - 2] == Operator.NOT.value:
-                                new_clause.append([self.clauses[x - 1][0][y - 2:y] + Operator.OR.value + self.clauses[x + 1][0]])
-                                new_clause.append([Operator.AND.value])
-                                if self.clauses[x - 1][0][y + 2].isalpha() and self.clauses[x - 1][0][y + 1] == Operator.NOT.value:
-                                    new_clause.append([self.clauses[x - 1][0][y + 1:y + 3] + Operator.OR.value + self.clauses[x + 1][0]])
-                                    self.clauses.pop(x - 1)
-                                    self.clauses.pop(x - 1)
-                                    self.clauses.pop(x - 1)
-                                    self.clauses.insert(x - 1, new_clause[0])  # TODO: SIMPLIFY and make universal
-                                    self.clauses.insert(x, new_clause[1])
-                                    self.clauses.insert(x + 1, new_clause[2])
-
-                            elif self.clauses[x - 1][0][y - 1].isalpha():
-                                pass
-                else:
-                    new_clause = []
-                    for y, lit in enumerate(self.clauses[x + 1][0]):
-                        if isinstance(lit, list):
-                            pass # TODO Make solution for bracket in bracket
-                        elif lit.isalpha() and self.clauses[x + 1][0][y - 1] == Operator.NOT.value:
-                            new_clause.append([self.clauses[x - 1][0] + Operator.OR.value + self.clauses[x + 1][0][y - 1:y + 1]])
-                            if y < len(self.clauses) - 1:
-                                new_clause.append([Operator.AND.value])
-                        elif lit.isalpha():
-                            new_clause.append([self.clauses[x - 1][0] + Operator.OR.value + self.clauses[x + 1][0][y]])
-                            if y < len(self.clauses) - 1:
-                                new_clause.append([Operator.AND.value])
-
-                    if len(new_clause) > 2:
-                        del self.clauses[x - 1:x + 2]
-                        self.clauses.insert(x - 1, new_clause[0])
-                        self.clauses.insert(x, new_clause[1])  # TODO: SIMPLIFY
-                        self.clauses.insert(x + 1, new_clause[2])
+        remove_redundant_brackets(self.clauses)
+        distribute_layer2_brackets(self.clauses)
 
     def is_formula_in_cnf(self):
         """Check if formula is in CNF"""
@@ -218,15 +180,15 @@ if __name__ == "__main__":
     input_formula = "(A→D)∨(A∨(B→C))→(¬A→(E∧F))"
     print("User input:\n" + input_formula + "\n")
     formula1 = Formula(input_formula)
-    print("First split cycle:\n" + str(formula1) + "\n")
+    #print("First split cycle:\n" + str(formula1) + "\n")
     formula1.split_to_clauses_2nd_cycle()
-    print("Second split cycle:\n" + str(formula1) + "\n")
+    #print("Second split cycle:\n" + str(formula1) + "\n")
     formula1.remove_implications_and_equivalences()  # TODO: finish  func
     print("Removed implications:\n" + str(formula1) + "\n")
     formula1.convert_to_NNF()  # TODO: finish  func
     print("Converted to NNF:\n" + str(formula1) + "\n")
-    #formula1.disjunction_distribution()  # TODO: finish  func
-    #print("Disjunction distribution:\n" + str(formula1) + "\n")
+    formula1.disjunction_distribution()  # TODO: finish  func
+    print("Disjunction distribution:\n" + str(formula1) + "\n")
     #if formula1.is_formula_in_cnf():  # TODO: finish  func
     #    formula1.negate_formula_for_resolution()  # TODO: finish  func
     #    # print("Negate each clause for resolution:\n" + str(formula1) + "\n")
