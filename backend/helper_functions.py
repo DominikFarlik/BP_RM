@@ -1,3 +1,4 @@
+from Clause import Clause
 from main import Operator
 
 def remove_implication_in_string(clause):
@@ -113,3 +114,17 @@ def distribute_layer2_brackets(formula):
                 else:
                     pass # TODO
                 formula[i] = [new_clause]
+
+
+def parse_formula(input_formula):
+    formula = Clause()
+    current_clause = formula
+    for index, char in enumerate(input_formula):
+        if char == "(":
+            current_clause = current_clause.add_clause(current_clause)
+        elif char == ")":
+            current_clause = current_clause.get_parent()
+        else:
+            current_clause.add_literal(char)
+
+    print("New formula parsed:\n" + str(formula))
