@@ -177,8 +177,11 @@ class Formula:
 
 if __name__ == "__main__":
     input_formula = "((A→B)∨(¬C∧(D∨¬E)))→(¬(A∨¬B)∨(F∧(G→H)))"
-    print("User input:\n" + input_formula + "\n")
-    parse_formula(input_formula)
+    print("User input: " + input_formula)
+    formula = parse_formula(input_formula)
+    print("Parsed formula: " + print_formula(formula))
+    formula.remove_implication()
+
     #formula1 = Formula(input_formula)
     #print("First split cycle:\n" + str(formula1) + "\n")
     #formula1.split_to_clauses_2nd_cycle()
