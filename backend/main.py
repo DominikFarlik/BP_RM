@@ -5,8 +5,11 @@ if __name__ == "__main__":
     print("User input: " + input_formula)
     formula = parse_formula(input_formula)
     print("Parsed formula: " + print_formula(formula))
-    formula.remove_implication()
+    formula.remove_implications()
     print("Removed implications: " + print_formula(formula))
+    formula.remove_unnecessary_negations()
+    print("Removed negations: " + print_formula(formula))
+
     #formula1 = Formula(input_formula)
     #print("First split cycle:\n" + str(formula1) + "\n")
     #formula1.split_to_clauses_2nd_cycle()

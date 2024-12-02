@@ -27,14 +27,41 @@ class Clause:
     def get_parent(self):
         return self.parent
 
-    def remove_implication(self):
+    def remove_implications(self):
         clauses = self.clause.copy()
         for index, clause in enumerate(clauses):
             if isinstance(clause, Clause):
-                clause.remove_implication()
+                clause.remove_implications()
             elif clause == Operator.IMPLICATION.value:
                 self.clause[index] = Operator.OR.value
                 self.clause.insert(index - 1, Operator.NOT.value)
+
+    def remove_unnecessary_negations(self):
+        clauses = self.clause.copy()
+        for index, clause in enumerate(self.clause):
+            if isinstance(clause, Clause):
+                clause.remove_unnecessary_negations()
+            elif clause == Operator.NOT.value and isinstance(clauses[index + 1], Clause):
+                self.clause.pop(index)
+                self.clause[index].negate_self()
+            elif clause == Operator.NOT.value and clauses[index + 1] == Operator.NOT.value:
+                del self.clause[index:index + 2]
+
+    def negate_self(self):
+        negated_clause = []
+        for clause in self.clause:
+            #if isinstance(clause, Clause):
+            #    clause.negate_self()
+            if clause == Operator.OR.value:
+                negated_clause.append(Operator.AND.value)
+            elif clause == Operator.AND.value:
+                negated_clause.append(Operator.OR.value)
+            elif clause == Operator.NOT.value:
+                negated_clause.append(Operator.NOT.value)
+            else:
+                negated_clause.append(Operator.NOT.value)
+                negated_clause.append(clause)
+        self.clause = negated_clause
 
 
 def parse_formula(input_formula):
