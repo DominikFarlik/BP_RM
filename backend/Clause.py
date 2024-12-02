@@ -1,8 +1,5 @@
 from enum import Enum
 
-from Formula import remove_double_negations
-
-
 class Operator(Enum):
     NOT = "¬"
     AND = "∧"
@@ -38,6 +35,7 @@ class Clause:
                 return clause
 
     def get_literals(self):
+        """Returns list of all literals in clause"""
         literals = []
         for index, clause in enumerate(self.clause):
             if clause.isalpha() and self.clause[index - 1] == Operator.NOT.value:
@@ -47,6 +45,7 @@ class Clause:
         return literals
 
     def remove_implications(self):
+        """Removes all implication from formula"""
         clauses = self.clause.copy()
         for index, clause in enumerate(clauses):
             if isinstance(clause, Clause):
@@ -56,6 +55,7 @@ class Clause:
                 self.clause.insert(index - 1, Operator.NOT.value)
 
     def remove_clause_negations(self):
+        """Removes negations in front of clauses"""
         clauses = self.clause.copy()
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
@@ -68,6 +68,7 @@ class Clause:
         self.remove_double_negations()
 
     def negate_self(self):
+        """Negates self clause"""
         negated_clause = []
         for clause in self.clause:
             if isinstance(clause, Clause):
@@ -85,16 +86,18 @@ class Clause:
         self.clause = negated_clause
 
     def remove_double_negations(self):
+        """Removes double negations from all clauses"""
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
                 clause.remove_clause_negations()
             if clause == Operator.NOT.value and self.clause[index + 1] == Operator.NOT.value:
                 del self.clause[index:index + 2]
 
-    def distribute_disjunctions(self):
+    def distribute(self):
+        """Distributes clauses"""
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
-                clause.distribute_disjunctions()
+                clause.distribute()
             elif clause == Operator.OR.value or clause == Operator.AND.value:
                 if isinstance(self.clause[index - 1], str) and isinstance(self.clause[index + 1], Clause):
                     literal_operator = clause
@@ -110,6 +113,7 @@ class Clause:
 
 
 def parse_formula(input_formula):
+    """Parse formula into a list of clauses"""
     formula = Clause()
     current_clause = formula
     for char in input_formula:
@@ -123,6 +127,7 @@ def parse_formula(input_formula):
 
 
 def print_formula(formula):
+    """Return formula in readable format"""
     out_formula = ""
     for clause in formula.clause:
         if isinstance(clause, Clause):

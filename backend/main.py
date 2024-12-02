@@ -9,5 +9,5 @@ if __name__ == "__main__":
     print("Removed implications: " + print_formula(formula))
     formula.remove_clause_negations()
     print("Removed clause negations: " + print_formula(formula))
-    formula.distribute_disjunctions()
+    formula.distribute()
     print("Disjunction distribution: " + print_formula(formula))
