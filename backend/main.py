@@ -8,7 +8,9 @@ if __name__ == "__main__":
     formula.remove_implications()
     print("Removed implications: " + print_formula(formula))
     formula.remove_clause_negations()
-    print("Removed negations: " + print_formula(formula))
+    print("Removed clause negations: " + print_formula(formula))
+    formula.distribute_disjunctions()
+    print("Disjunction distribution: " + print_formula(formula))
 
     #formula1 = Formula(input_formula)
     #print("First split cycle:\n" + str(formula1) + "\n")

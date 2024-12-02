@@ -23,11 +23,28 @@ class Clause:
         self.clause.append(Clause(parent))
         return self.clause[-1]
 
+    def set_clause(self, clause):
+        self.clause = clause
+
     def add_literal(self, literal):
         self.clause.append(literal)
 
     def get_parent(self):
         return self.parent
+
+    def get_clause_operator(self):
+        for clause in self.clause:
+            if clause == Operator.OR.value or clause == Operator.AND.value:
+                return clause
+
+    def get_literals(self):
+        literals = []
+        for index, clause in enumerate(self.clause):
+            if clause.isalpha() and self.clause[index - 1] == Operator.NOT.value:
+                literals.append(Operator.NOT.value + clause)
+            elif clause.isalpha():
+                literals.append(clause)
+        return literals
 
     def remove_implications(self):
         clauses = self.clause.copy()
@@ -68,12 +85,28 @@ class Clause:
         self.clause = negated_clause
 
     def remove_double_negations(self):
-        clauses = self.clause.copy()
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
                 clause.remove_clause_negations()
-            if clause == Operator.NOT.value and clauses[index + 1] == Operator.NOT.value:
+            if clause == Operator.NOT.value and self.clause[index + 1] == Operator.NOT.value:
                 del self.clause[index:index + 2]
+
+    def distribute_disjunctions(self):
+        for index, clause in enumerate(self.clause):
+            if isinstance(clause, Clause):
+                clause.distribute_disjunctions()
+            elif clause == Operator.OR.value or clause == Operator.AND.value:
+                if isinstance(self.clause[index - 1], str) and isinstance(self.clause[index + 1], Clause):
+                    literal_operator = clause
+                    clause_operator = self.clause[index + 1].get_clause_operator()
+                    first_clause_literal = "".join(self.clause[index - 2:index]) if self.clause[index - 2] == Operator.NOT.value else self.clause[index - 1]
+                    second_clause_literals = self.clause[index + 1].get_literals()
+                    clause1 = Clause(self)
+                    clause1.set_clause(first_clause_literal + literal_operator + second_clause_literals[0])
+                    clause2 = Clause(self)
+                    clause2.set_clause(first_clause_literal + literal_operator + second_clause_literals[1])
+                    distributed_clause = [clause1, clause_operator, clause2]
+                    self.clause = distributed_clause
 
 
 def parse_formula(input_formula):
