@@ -7,7 +7,7 @@ if __name__ == "__main__":
     print("Parsed formula: " + print_formula(formula))
     formula.remove_implications()
     print("Removed implications: " + print_formula(formula))
-    formula.remove_unnecessary_negations()
+    formula.remove_clause_negations()
     print("Removed negations: " + print_formula(formula))
 
     #formula1 = Formula(input_formula)

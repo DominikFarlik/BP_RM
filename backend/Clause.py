@@ -1,5 +1,7 @@
 from enum import Enum
 
+from Formula import remove_double_negations
+
 
 class Operator(Enum):
     NOT = "¬"
@@ -36,23 +38,25 @@ class Clause:
                 self.clause[index] = Operator.OR.value
                 self.clause.insert(index - 1, Operator.NOT.value)
 
-    def remove_unnecessary_negations(self):
+    def remove_clause_negations(self):
         clauses = self.clause.copy()
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
-                clause.remove_unnecessary_negations()
+                clause.remove_clause_negations()
             elif clause == Operator.NOT.value and isinstance(clauses[index + 1], Clause):
                 self.clause.pop(index)
                 self.clause[index].negate_self()
-            elif clause == Operator.NOT.value and clauses[index + 1] == Operator.NOT.value:
+            if clause == Operator.NOT.value and clauses[index + 1] == Operator.NOT.value:
                 del self.clause[index:index + 2]
+        self.remove_double_negations()
 
     def negate_self(self):
         negated_clause = []
         for clause in self.clause:
-            #if isinstance(clause, Clause):
-            #    clause.negate_self()
-            if clause == Operator.OR.value:
+            if isinstance(clause, Clause):
+                clause.negate_self()
+                negated_clause.append(clause)
+            elif clause == Operator.OR.value:
                 negated_clause.append(Operator.AND.value)
             elif clause == Operator.AND.value:
                 negated_clause.append(Operator.OR.value)
@@ -62,6 +66,14 @@ class Clause:
                 negated_clause.append(Operator.NOT.value)
                 negated_clause.append(clause)
         self.clause = negated_clause
+
+    def remove_double_negations(self):
+        clauses = self.clause.copy()
+        for index, clause in enumerate(self.clause):
+            if isinstance(clause, Clause):
+                clause.remove_clause_negations()
+            if clause == Operator.NOT.value and clauses[index + 1] == Operator.NOT.value:
+                del self.clause[index:index + 2]
 
 
 def parse_formula(input_formula):
