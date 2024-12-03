@@ -1,6 +1,4 @@
 from enum import Enum
-from types import new_class
-
 
 class Operator(Enum):
     NOT = "¬"
@@ -18,7 +16,7 @@ class Clause:
     def __str__(self):
         return str(self.clause)
 
-    def add_clause(self, parent):
+    def append_empty_clause(self, parent):
         self.clause.append(Clause(parent))
         return self.clause[-1]
 
@@ -27,6 +25,10 @@ class Clause:
 
     def add_literal(self, literal):
         self.clause.append(literal)
+
+    def add_literals(self, clause):
+        for literal in clause:
+            self.clause.append(literal)
 
     def get_parent(self):
         return self.parent
@@ -118,9 +120,36 @@ class Clause:
                         new_clause.add_literal(in_operator)
                         new_clause.add_literal(lit2)
                         new_clause_list.append(new_clause)
-                        if i < len(first_lit) - 1:
-                            new_clause_list.append(out_operator)
-                self.set_clause(new_clause_list)
+                        new_clause_list.append(out_operator)
+                self.set_clause(new_clause_list[0:len(new_clause_list) - 1])
+
+    def resolute(self):
+        clauses = [clause for clause in self.clause if clause != "∧"]
+        for index, clause in enumerate(clauses):
+            literals = clause.get_literals()
+            for i, clause2 in enumerate(clauses[index + 1:len(clauses)]):
+                literals2 = clause2.get_literals()
+                [print(c, end="") for c in clauses]
+                print("\n")
+                for l1, literal in enumerate(literals):
+                    for l2, literal2 in enumerate(literals2):
+                        new_clause = Clause()
+                        canResolve = False
+                        if len(literal) == 2 and len(literal2) == 1:
+                            if literal[1] == literal2:
+                                canResolve = True
+                        elif len(literal) == 1 and len(literal2) == 2:
+                            if literal == literal2[1]:
+                                canResolve = True
+                        if canResolve:
+                            new_lits = literals[0:l1] + literals[l1 + 1:]
+                            new_lits2 = literals2[0:l2] + literals2[l2 + 1:]
+                            new_clause.add_literals(new_lits + new_lits2)
+                            clauses.pop(index)
+                            clauses.pop(i - 1)
+                            clauses.append(new_clause)
+        self.set_clause(clauses)
+
 
 def parse_formula(input_formula):
     """Parse formula into a list of clauses"""
@@ -128,7 +157,7 @@ def parse_formula(input_formula):
     current_clause = formula
     for char in input_formula:
         if char == "(":
-            current_clause = current_clause.add_clause(current_clause)
+            current_clause = current_clause.append_empty_clause(current_clause)
         elif char == ")":
             current_clause = current_clause.get_parent()
         else:
@@ -145,24 +174,3 @@ def print_formula(formula):
         else:
             out_formula += clause
     return out_formula
-
-#old distribution
-#for index, clause in enumerate(self.clause):
-#    if isinstance(clause, Clause):
-#        clause.distribute()
-#    elif clause == Operator.OR.value or clause == Operator.AND.value:
-#        if isinstance(self.clause[index - 1], str) and isinstance(self.clause[index + 1], Clause):
-#            literal_operator = clause
-#            clause_operator = self.clause[index + 1].get_clause_operator()
-#            first_clause_literal = "".join(self.clause[index - 2:index]) if self.clause[
-#                                                                                index - 2] == Operator.NOT.value else \
-#            self.clause[index - 1]
-#            second_clause_literals = self.clause[index + 1].get_literals()
-#
-#            clause1 = Clause(self)
-#            clause1.set_clause(first_clause_literal + literal_operator + second_clause_literals[0])
-#            clause2 = Clause(self)
-#            clause2.set_clause(first_clause_literal + literal_operator + second_clause_literals[1])
-#
-#            distributed_clause = [clause1, clause_operator, clause2]
-#            self.clause = distributed_clause
