@@ -124,31 +124,43 @@ class Clause:
                 self.set_clause(new_clause_list[0:len(new_clause_list) - 1])
 
     def resolute(self):
-        clauses = [clause for clause in self.clause if clause != "∧"]
-        for index, clause in enumerate(clauses):
-            literals = clause.get_literals()
-            for i, clause2 in enumerate(clauses[index + 1:len(clauses)]):
-                literals2 = clause2.get_literals()
-                [print(c, end="") for c in clauses]
-                print("\n")
-                for l1, literal in enumerate(literals):
-                    for l2, literal2 in enumerate(literals2):
-                        new_clause = Clause()
-                        canResolve = False
-                        if len(literal) == 2 and len(literal2) == 1:
-                            if literal[1] == literal2:
-                                canResolve = True
-                        elif len(literal) == 1 and len(literal2) == 2:
-                            if literal == literal2[1]:
-                                canResolve = True
-                        if canResolve:
-                            new_lits = literals[0:l1] + literals[l1 + 1:]
-                            new_lits2 = literals2[0:l2] + literals2[l2 + 1:]
-                            new_clause.add_literals(new_lits + new_lits2)
-                            clauses.pop(index)
-                            clauses.pop(i - 1)
-                            clauses.append(new_clause)
-        self.set_clause(clauses)
+        clauses = self.get_list_of_clauses()
+        finished = False
+        while not finished:
+            canResolve = False
+            for c1, clause in enumerate(clauses):
+                if canResolve:
+                    break
+                for l1, literal in enumerate(clause):
+                    if canResolve:
+                        break
+                    for c2, clause2 in enumerate(clauses):
+                        if c1 == c2 or canResolve:
+                            break
+                        for l2, literal2 in enumerate(clause2):
+                            if len(literal) == 2:
+                                if literal[1] == literal2:
+                                    canResolve = True
+                            elif len(literal2) == 2:
+                                if literal2[1] == literal:
+                                    canResolve = True
+
+                            if canResolve:
+                                clauses.append(clause[0:l1] + clause[l1 + 1:len(clause)] + clause2[0:l2] + clause2[l2 + 1:len(clause2)])
+                                clauses.remove(clause)
+                                clauses.remove(clause2)
+                                break
+            if not canResolve:
+                finished = True
+        return clauses
+
+
+    def get_list_of_clauses(self):
+        clauses = []
+        for index, clause in enumerate(self.clause):
+            if isinstance(clause, Clause):
+                clauses.append(clause.get_literals())
+        return clauses
 
 
 def parse_formula(input_formula):
