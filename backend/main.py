@@ -1,7 +1,7 @@
 from Clause import parse_formula, print_formula
 
 if __name__ == "__main__":
-    input_formula = "(A∨B)∧(¬A∨C)∧(¬B∨¬C)"
+    input_formula = "(A∨B)∧(¬A∨C)∧(¬B∨¬D)"
     print("User input: " + " "*14 + input_formula)
     formula = parse_formula(input_formula)
     print("Parsed formula: " + " "*10 + print_formula(formula))
@@ -11,4 +11,8 @@ if __name__ == "__main__":
     print("Removed clause negations: " + print_formula(formula))
     formula.distribute()
     print("Disjunction distribution: " + print_formula(formula))
-    print("Resolute: " + str(formula.resolute()))
+    resolution = formula.resolute()
+    if not resolution:
+        print("Empty clause left -> formula is not feasible.")
+    else:
+        print(str(resolution) + " left -> formula is feasible.")

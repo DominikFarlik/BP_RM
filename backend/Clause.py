@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Operator(Enum):
     NOT = "¬"
     AND = "∧"
@@ -127,6 +128,7 @@ class Clause:
         clauses = self.get_list_of_clauses()
         finished = False
         while not finished:
+            print("New resolvent: " + str(clauses[-1]) + "\nCurrent clauses: " + str(clauses))
             canResolve = False
             for c1, clause in enumerate(clauses):
                 if canResolve:
@@ -146,14 +148,21 @@ class Clause:
                                     canResolve = True
 
                             if canResolve:
-                                clauses.append(clause[0:l1] + clause[l1 + 1:len(clause)] + clause2[0:l2] + clause2[l2 + 1:len(clause2)])
+                                clauses.append(clause[0:l1] + clause[l1 + 1:len(clause)] +
+                                               clause2[0:l2] + clause2[l2 + 1:len(clause2)])
                                 clauses.remove(clause)
                                 clauses.remove(clause2)
                                 break
             if not canResolve:
+                if len(clauses[0]) == 2:
+                    if len(clauses[0][0]) == 2:
+                        if clauses[0][0][1] == clauses[0][1]:
+                            clauses.pop(0)
+                    elif len(clauses[0][1]) == 2:
+                        if clauses[0][1][1] == clauses[0][0]:
+                            clauses.pop(0)
                 finished = True
         return clauses
-
 
     def get_list_of_clauses(self):
         clauses = []
@@ -173,7 +182,7 @@ def parse_formula(input_formula):
         elif char == ")":
             current_clause = current_clause.get_parent()
         else:
-            current_clause.add_literal(char) #(A∧¬B)∧(¬C∧¬D∧E)∨((¬A∧B)∨(F∧¬G)∨(F∧H))
+            current_clause.add_literal(char)
     return formula
 
 
