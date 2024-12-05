@@ -1,11 +1,12 @@
 from enum import Enum
+import copy
 
 
 class Operator(Enum):
     NOT = "¬"
     AND = "∧"
     OR = "∨"
-    IMPLICATION = "⟹"
+    IMPLICATION = "→"
     EQUIVALENCE = "↔"
 
 
@@ -22,7 +23,7 @@ class Clause:
         return self.clause[-1]
 
     def set_clause(self, clause):
-        self.clause = clause
+        self.clause = clause.copy()
 
     def add_literal(self, literal):
         self.clause.append(literal)
@@ -48,6 +49,17 @@ class Clause:
             elif clause.isalpha():
                 literals.append(clause)
         return literals
+
+    def remove_equivalences(self):
+        for index, clause in enumerate(self.clause):
+            if isinstance(clause, Clause):
+                clause.remove_equivalences()
+            elif clause == Operator.EQUIVALENCE.value and isinstance(self.clause[index - 1], Clause):
+                new_clause1 = Clause(self)
+                new_clause2 = Clause(self)
+                new_clause1.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.IMPLICATION.value, copy.deepcopy(self.clause[index + 1])])
+                new_clause2.set_clause([copy.deepcopy(self.clause[index + 1]), Operator.IMPLICATION.value, copy.deepcopy(self.clause[index - 1])])
+                self.clause = [new_clause1, Operator.AND.value, new_clause2]
 
     def remove_implications(self):
         """Removes all implication from formula"""
@@ -94,32 +106,33 @@ class Clause:
         """Removes double negations from all clauses"""
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
-                clause.remove_clause_negations()
+                clause.remove_double_negations()
             if clause == Operator.NOT.value and self.clause[index + 1] == Operator.NOT.value:
                 del self.clause[index:index + 2]
 
     def distribute(self):
         """Distributes clauses"""
         for index, clause in enumerate(self.clause):
+            if isinstance(clause, Clause):
+                clause.distribute()
             if clause == Operator.OR.value:
                 first_lit = []
                 second_lit = []
                 in_operator = clause
                 out_operator = Operator
+
                 if isinstance(self.clause[index - 1], Clause):
                     first_lit = self.clause[index - 1].get_literals()
                     out_operator = self.clause[index - 1].get_operator()
-                else:
-                    pass
+
                 if isinstance(self.clause[index + 1], Clause):
                     second_lit = self.clause[index + 1].get_literals()
+
                 new_clause_list = []
                 for i, lit1 in enumerate(first_lit):
                     for lit2 in second_lit:
                         new_clause = Clause()
-                        new_clause.add_literal(lit1)
-                        new_clause.add_literal(in_operator)
-                        new_clause.add_literal(lit2)
+                        new_clause.set_clause([lit1, in_operator, lit2])
                         new_clause_list.append(new_clause)
                         new_clause_list.append(out_operator)
                 self.set_clause(new_clause_list[0:len(new_clause_list) - 1])
