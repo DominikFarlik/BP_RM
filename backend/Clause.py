@@ -23,7 +23,7 @@ class Clause:
         return self.clause[-1]
 
     def set_clause(self, clause):
-        self.clause = clause.copy()
+        self.clause = clause
 
     def add_literal(self, literal):
         self.clause.append(literal)
@@ -114,28 +114,34 @@ class Clause:
         """Distributes clauses"""
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
-                clause.distribute()
-            if clause == Operator.OR.value:
-                first_lit = []
-                second_lit = []
-                in_operator = clause
-                out_operator = Operator
+                if len(clause.clause) == 3:
+                    new_clause = Clause(self)
+                    left_clause = Clause(new_clause)
+                    right_clause = Clause(new_clause)
+                    left_first = Clause(left_clause)
+                    right_first = Clause(right_clause)
 
-                if isinstance(self.clause[index - 1], Clause):
-                    first_lit = self.clause[index - 1].get_literals()
-                    out_operator = self.clause[index - 1].get_operator()
+                    if isinstance(clause.clause[0].clause[0], Clause):
+                         left_first.set_clause([clause.clause[0].clause[0]])
+                         right_first.set_clause([clause.clause[0].clause[2]])
 
-                if isinstance(self.clause[index + 1], Clause):
-                    second_lit = self.clause[index + 1].get_literals()
+                    elif clause.clause[0].clause[0] == Operator.NOT.value:
+                        left_first = clause.clause[0].clause[1]
+                        if clause.clause[0].clause[3] == Operator.NOT.value:
+                            right_first = clause.clause[0].clause[3] + clause.clause[0].clause[4]
+                        else:
+                            right_first = clause.clause[3]
+                    else:
+                        left_first = clause.clause[0].clause[0]
+                        if clause.clause[0].clause[2] == Operator.NOT.value:
+                            right_first = clause.clause[0].clause[2] + clause.clause[0].clause[3]
+                        else:
+                            right_first = clause.clause[2]
 
-                new_clause_list = []
-                for i, lit1 in enumerate(first_lit):
-                    for lit2 in second_lit:
-                        new_clause = Clause()
-                        new_clause.set_clause([lit1, in_operator, lit2])
-                        new_clause_list.append(new_clause)
-                        new_clause_list.append(out_operator)
-                self.set_clause(new_clause_list[0:len(new_clause_list) - 1])
+                    left_clause.set_clause([left_first, Operator.OR.value, copy.deepcopy(clause.clause[2])])
+                    right_clause.set_clause([right_first, Operator.OR.value, copy.deepcopy(clause.clause[2])])
+                    new_clause.set_clause([left_clause, Operator.AND.value, right_clause])
+                    print(print_formula(new_clause))
 
     def resolute(self):
         clauses = self.get_list_of_clauses()
