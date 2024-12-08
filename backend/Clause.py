@@ -35,10 +35,12 @@ class Clause:
     def get_parent(self):
         return self.parent
 
-    def get_operator(self):
+    def get_operators(self):
+        operators = []
         for clause in self.clause:
             if clause == Operator.OR.value or clause == Operator.AND.value:
-                return clause
+                operators.append(clause)
+        return operators
 
     def get_literals(self):
         """Returns list of all literals in clause"""
@@ -57,8 +59,10 @@ class Clause:
             elif clause == Operator.EQUIVALENCE.value and isinstance(self.clause[index - 1], Clause):
                 new_clause1 = Clause(self)
                 new_clause2 = Clause(self)
-                new_clause1.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.IMPLICATION.value, copy.deepcopy(self.clause[index + 1])])
-                new_clause2.set_clause([copy.deepcopy(self.clause[index + 1]), Operator.IMPLICATION.value, copy.deepcopy(self.clause[index - 1])])
+                new_clause1.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.IMPLICATION.value,
+                                        copy.deepcopy(self.clause[index + 1])])
+                new_clause2.set_clause([copy.deepcopy(self.clause[index + 1]), Operator.IMPLICATION.value,
+                                        copy.deepcopy(self.clause[index - 1])])
                 self.clause = [new_clause1, Operator.AND.value, new_clause2]
 
     def remove_implications(self):
@@ -120,10 +124,9 @@ class Clause:
                     right_clause = Clause(new_clause)
                     left_first = Clause(left_clause)
                     right_first = Clause(right_clause)
-
                     if isinstance(clause.clause[0].clause[0], Clause):
-                         left_first.set_clause([clause.clause[0].clause[0]])
-                         right_first.set_clause([clause.clause[0].clause[2]])
+                        left_first.set_clause(clause.clause[0].clause[0].clause)
+                        right_first.set_clause(clause.clause[0].clause[2].clause)
 
                     elif clause.clause[0].clause[0] == Operator.NOT.value:
                         left_first = clause.clause[0].clause[1]
@@ -141,7 +144,28 @@ class Clause:
                     left_clause.set_clause([left_first, Operator.OR.value, copy.deepcopy(clause.clause[2])])
                     right_clause.set_clause([right_first, Operator.OR.value, copy.deepcopy(clause.clause[2])])
                     new_clause.set_clause([left_clause, Operator.AND.value, right_clause])
-                    print(print_formula(new_clause))
+                    self.clause[index] = new_clause
+
+    def connect_clauses_with_same_operators(self):
+        for main_clause in self.clause:
+            if isinstance(main_clause, Clause):
+                main_clause.connect_clauses_with_same_operators()
+            operators = []
+            for clause in self.clause:
+                if isinstance(clause, Clause):
+                    operators.extend(clause.get_operators())
+                if clause == Operator.AND.value or clause == Operator.OR.value:
+                    operators.append(clause)
+
+            if len(set(operators)) == 1:
+                new_clause = []
+                for clause in self.clause:
+                    if isinstance(clause, Clause):
+                        for clause2 in clause.clause:
+                            new_clause.append(clause2)
+                    else:
+                        new_clause.append(clause)
+                self.clause = new_clause
 
     def resolute(self):
         clauses = self.get_list_of_clauses()

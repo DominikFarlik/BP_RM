@@ -13,6 +13,8 @@ if __name__ == "__main__":
     print("Removed clause negations: " + print_formula(formula))
     formula.distribute()
     print("Disjunction distribution: " + print_formula(formula))
+    formula.connect_clauses_with_same_operators()
+    print("Removed unnecessary brackets: " + print_formula(formula))
     #resolution = formula.resolute()
     #if not resolution:
     #    print("Empty clause left -> formula is not feasible.")
