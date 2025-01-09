@@ -1,7 +1,5 @@
-from calendar import firstweekday
 from enum import Enum
 import copy
-
 
 class Operator(Enum):
     NOT = "¬"
@@ -29,9 +27,10 @@ class Clause:
     def add_literal(self, literal):
         self.clause.append(literal)
 
-    def add_literals(self, clause):
-        for literal in clause:
-            self.clause.append(literal)
+    def add_clause(self, clause: list):
+        new_clause = Clause()
+        new_clause.set_clause(clause)
+        self.clause.append(new_clause)
 
     def get_parent(self):
         return self.parent
@@ -117,49 +116,41 @@ class Clause:
 
     def distribute(self):
         """Distributes clauses"""
-        for i in range(2):
-            for index, clause in enumerate(self.clause):
-                canDistribute = False
-                if isinstance(clause, Clause):
-                    clause.distribute()
-                if clause == Operator.OR.value:
-                    first_clause = Clause()
-                    second_clause = Clause()
-                    if isinstance(self.clause[index - 1], Clause):
-                        if isinstance(self.clause[index - 1].clause[0], Clause) and self.clause[index - 1].clause[1] == Operator.AND.value and isinstance(self.clause[index - 1].clause[2], Clause):
-                            first_clause.set_clause([self.clause[index - 1].clause[0], Operator.OR.value, copy.deepcopy(self.clause[index + 1])])
-                            second_clause.set_clause([self.clause[index - 1].clause[2], Operator.OR.value, copy.deepcopy(self.clause[index + 1])])
-                            canDistribute = True
-                        elif isinstance(self.clause[index - 1].clause[0], str) and Operator.AND.value in self.clause[index - 1].clause:
-                            and_pos = self.clause[index - 1].clause.index(Operator.AND.value)
-                            first_clause.set_clause([''.join(self.clause[index - 1].clause[0:and_pos]), Operator.OR.value, copy.deepcopy(self.clause[index + 1])])
-                            second_clause.set_clause([''.join(self.clause[index - 1].clause[and_pos + 1: len(self.clause[index - 1].clause)]), Operator.OR.value, copy.deepcopy(self.clause[index + 1])])
-                            canDistribute = True
-                    elif isinstance(self.clause[index + 1], Clause):
-                        if isinstance(self.clause[index + 1].clause[0], Clause):
-                            if isinstance(self.clause[index - 1], str):
-                                first_clause.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.OR.value, self.clause[index + 1].clause[0]])
-                                second_clause.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.OR.value, self.clause[index + 1].clause[2]])
-                                canDistribute = True
-                        elif isinstance(self.clause[index + 1].clause[0], str):
-                            if self.clause[index + 1].clause[0] == Operator.NOT.value:
-                                first_clause.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.OR.value, ''.join(self.clause[index + 1].clause[0:2])])
-                                if self.clause[index + 1].clause[3] == Operator.NOT.value:
-                                    second_clause.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.OR.value, ''.join(self.clause[index + 1].clause[3:5])])
-                                else:
-                                    second_clause.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.OR.value, self.clause[index + 1].clause[3]])
-                            else:
-                                first_clause.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.OR.value, self.clause[index + 1].clause[0]])
-                                if self.clause[index + 1].clause[2] == Operator.NOT.value:
-                                    second_clause.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.OR.value, ''.join(self.clause[index + 1].clause[2:4])])
-                                else:
-                                    second_clause.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.OR.value, self.clause[index + 1].clause[2]])
-                            canDistribute = True
-                    if canDistribute:
-                        self.clause[index - 1] = first_clause
-                        self.clause[index] = Operator.AND.value
-                        self.clause[index + 1] = second_clause
-                        print(print_formula(self))
+        for index, clause in enumerate(self.clause):
+            if isinstance(clause, Clause):
+                clause.distribute()
+            if clause == Operator.OR.value:
+                if isinstance(self.clause[0], Clause) and isinstance(self.clause[2], Clause): # Clause OR Clause
+                    if Operator.AND.value in self.clause[0].clause and Operator.AND.value in self.clause[2].clause: # [lit AND lit] OR [lit AND lit]
+                        first_clause_AND_pos = self.clause[0].clause.index(Operator.AND.value)
+                        second_clause_AND_pos = self.clause[2].clause.index(Operator.AND.value)
+                        new_clause = Clause()
+                        first_lit = []
+                        second_lit = []
+                        third_lit = []
+                        fourth_lit = []
+                        first_lit.extend(self.clause[0].clause[0:first_clause_AND_pos])
+                        first_lit.append(Operator.OR.value)
+                        first_lit.extend(self.clause[2].clause[0:second_clause_AND_pos])
+                        new_clause.add_clause(first_lit)
+                        new_clause.add_literal(Operator.AND.value)
+                        second_lit.extend(self.clause[0].clause[0:first_clause_AND_pos])
+                        second_lit.append(Operator.OR.value)
+                        second_lit.extend(self.clause[2].clause[second_clause_AND_pos + 1:len(self.clause[2].clause)])
+                        new_clause.add_clause(second_lit)
+                        new_clause.add_literal(Operator.AND.value)
+                        third_lit.extend(self.clause[0].clause[first_clause_AND_pos + 1:len(self.clause[2].clause)])
+                        third_lit.append(Operator.OR.value)
+                        third_lit.extend(self.clause[2].clause[0:second_clause_AND_pos])
+                        new_clause.add_clause(third_lit)
+                        new_clause.add_literal(Operator.AND.value)
+                        fourth_lit.extend(self.clause[0].clause[first_clause_AND_pos + 1:len(self.clause[2].clause)])
+                        fourth_lit.append(Operator.OR.value)
+                        fourth_lit.extend(self.clause[2].clause[second_clause_AND_pos + 1:len(self.clause[2].clause)])
+                        new_clause.add_clause(fourth_lit)
+                        self.clause = new_clause.clause
+                    elif Operator.OR.value in self.clause[0].clause and Operator.AND.value in self.clause[0].clause:  # [lit OR lit] OR [lit AND lit]
+                        pass
 
 
     def connect_clauses_with_same_operators(self):
