@@ -120,8 +120,8 @@ class Clause:
             if isinstance(clause, Clause):
                 clause.distribute()
             if clause == Operator.OR.value:
-                if isinstance(self.clause[0], Clause) and isinstance(self.clause[2], Clause): # Clause OR Clause
-                    if Operator.AND.value in self.clause[0].clause and Operator.AND.value in self.clause[2].clause: # [lit AND lit] OR [lit AND lit]
+                if isinstance(self.clause[0], Clause) and isinstance(self.clause[2], Clause):  # Clause OR Clause
+                    if Operator.AND.value in self.clause[0].clause and Operator.AND.value in self.clause[2].clause:  # [lit AND lit] OR [lit AND lit]
                         first_clause_AND_pos = self.clause[0].clause.index(Operator.AND.value)
                         second_clause_AND_pos = self.clause[2].clause.index(Operator.AND.value)
                         new_clause = Clause()
@@ -150,8 +150,24 @@ class Clause:
                         new_clause.add_clause(fourth_lit)
                         self.clause = new_clause.clause
                     elif Operator.OR.value in self.clause[0].clause and Operator.AND.value in self.clause[0].clause:  # [lit OR lit] OR [lit AND lit]
-                        pass
+                        print(self.clause)
+                elif isinstance(self.clause[0], Clause) and isinstance(self.clause[2], str):  # Clause OR lit
+                    if Operator.AND.value in self.clause[0].clause:  # [lit AND lit] OR lit
 
+                        first_clause_AND_pos = self.clause[0].clause.index(Operator.AND.value)
+                        new_clause = Clause()
+                        first_lit = []
+                        second_lit = []
+                        first_lit.extend(self.clause[0].clause[0:first_clause_AND_pos])
+                        first_lit.append(Operator.OR.value)
+                        first_lit.extend(self.clause[2])
+                        new_clause.add_clause(first_lit)
+                        new_clause.add_literal(Operator.AND.value)
+                        second_lit.extend(self.clause[0].clause[first_clause_AND_pos + 1:len(self.clause[0].clause)])
+                        second_lit.append(Operator.OR.value)
+                        second_lit.extend(self.clause[2])
+                        new_clause.add_clause(second_lit)
+                        self.clause = new_clause.clause
 
     def connect_clauses_with_same_operators(self):
         for main_clause in self.clause:

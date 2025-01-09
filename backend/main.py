@@ -1,7 +1,7 @@
 from Clause import parse_formula, print_formula
 
 if __name__ == "__main__":
-    input_formula = "((A∨¬B)→(C∧¬D))∨(¬(E∨F)→(G∧¬H))"
+    input_formula = "((A∨B)→C)∧(¬D∨(E→F))"
     print("User input: " + " "*14 + input_formula)
     formula = parse_formula(input_formula)
     print("Parsed formula: " + " "*10 + print_formula(formula))
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     formula.distribute()
     print("Disjunction distribution: " + print_formula(formula))
     formula.connect_clauses_with_same_operators()
-    print("Removed brackets: " + " "*8 + print_formula(formula))
+    print("Removed unnecessary brackets: " + print_formula(formula))
 
     #formula.distribute()
     #formula.connect_clauses_with_same_operators()
