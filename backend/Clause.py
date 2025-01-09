@@ -1,6 +1,7 @@
 from enum import Enum
 import copy
 
+
 class Operator(Enum):
     NOT = "¬"
     AND = "∧"
@@ -51,6 +52,13 @@ class Clause:
             elif clause.isalpha():
                 literals.append(clause)
         return literals
+
+    def get_list_of_clauses(self):
+        clauses = []
+        for index, clause in enumerate(self.clause):
+            if isinstance(clause, Clause):
+                clauses.append(clause.get_literals())
+        return clauses
 
     def remove_equivalences(self):
         for index, clause in enumerate(self.clause):
@@ -121,7 +129,8 @@ class Clause:
                 clause.distribute()
             if clause == Operator.OR.value:
                 if isinstance(self.clause[0], Clause) and isinstance(self.clause[2], Clause):  # Clause OR Clause
-                    if Operator.AND.value in self.clause[0].clause and Operator.AND.value in self.clause[2].clause:  # [lit AND lit] OR [lit AND lit]
+                    if Operator.AND.value in self.clause[0].clause and Operator.AND.value in self.clause[
+                        2].clause:  # [lit AND lit] OR [lit AND lit]
                         first_clause_AND_pos = self.clause[0].clause.index(Operator.AND.value)
                         second_clause_AND_pos = self.clause[2].clause.index(Operator.AND.value)
                         new_clause = Clause()
@@ -149,8 +158,23 @@ class Clause:
                         fourth_lit.extend(self.clause[2].clause[second_clause_AND_pos + 1:len(self.clause[2].clause)])
                         new_clause.add_clause(fourth_lit)
                         self.clause = new_clause.clause
-                    elif Operator.OR.value in self.clause[0].clause and Operator.AND.value in self.clause[0].clause:  # [lit OR lit] OR [lit AND lit]
-                        print(self.clause)
+                    elif Operator.OR.value in self.clause[0].clause and Operator.AND.value in self.clause[
+                        2].clause:  # [lit OR lit] OR [lit AND lit]
+                        second_clause_AND_pos = self.clause[2].clause.index(Operator.AND.value)
+                        new_clause = Clause()
+                        first_lit = []
+                        second_lit = []
+                        first_lit.extend(self.clause[0].clause)
+                        first_lit.append(Operator.OR.value)
+                        first_lit.extend(self.clause[2].clause[0:second_clause_AND_pos])
+                        new_clause.add_clause(first_lit)
+                        new_clause.add_literal(Operator.AND.value)
+                        second_lit.extend(self.clause[0].clause)
+                        second_lit.append(Operator.OR.value)
+                        second_lit.extend(self.clause[2].clause[second_clause_AND_pos + 1:len(self.clause[2].clause)])
+                        new_clause.add_clause(second_lit)
+                        self.clause = new_clause.clause
+
                 elif isinstance(self.clause[0], Clause) and isinstance(self.clause[2], str):  # Clause OR lit
                     if Operator.AND.value in self.clause[0].clause:  # [lit AND lit] OR lit
 
@@ -170,29 +194,46 @@ class Clause:
                         self.clause = new_clause.clause
 
     def connect_clauses_with_same_operators(self):
-        for main_clause in self.clause:
+        for index, main_clause in enumerate(self.clause):
             if isinstance(main_clause, Clause):
                 main_clause.connect_clauses_with_same_operators()
-            operators = []
-            for clause in self.clause:
-                if isinstance(clause, Clause):
-                    operators.extend(clause.get_operators())
-                if clause == Operator.AND.value or clause == Operator.OR.value:
-                    operators.append(clause)
-
-            if len(set(operators)) == 1:
-                new_clause = []
-                for clause in self.clause:
-                    if isinstance(clause, Clause):
-                        for clause2 in clause.clause:
-                            new_clause.append(clause2)
-                    else:
+            if isinstance(main_clause, Clause):
+                operators = []
+                operators.extend(main_clause.get_operators())
+                if index > 0:
+                    operators.append(self.clause[index - 1])
+                if index < len(self.clause) - 1:
+                    operators.append(self.clause[index + 1])
+                if len(set(operators)) == 1:
+                    new_clause = []
+                    new_clause.extend(self.clause[0:index])
+                    for clause in main_clause.clause:
                         new_clause.append(clause)
-                self.clause = new_clause
+                    new_clause.extend(self.clause[index + 1:len(self.clause)])
+                    self.clause = new_clause
+
+    def check_for_tautology_in_disjunctions(self):
+        for index, clause in enumerate(self.clause):
+            if isinstance(clause, Clause):
+                literals = []
+                neg_literals = []
+                for i, literal in enumerate(clause.clause):
+                    if literal.isalpha():
+                        if clause.clause[i - 1] == Operator.NOT.value:
+                            neg_literals.append(literal)
+                        else:
+                            literals.append(literal)
+                tautology_literals = set(literals) & set(neg_literals)
+                if len(tautology_literals) > 0:
+                    print(str(tautology_literals) + " is tautology, literal removed.")
+                    self.clause.pop(index)
+                    self.clause.pop(index - 1)
 
     def resolute(self):
         clauses = self.get_list_of_clauses()
         finished = False
+        if not clauses:
+            finished = True
         while not finished:
             print("New resolvent: " + str(clauses[-1]) + "\nCurrent clauses: " + str(clauses))
             canResolve = False
@@ -228,14 +269,24 @@ class Clause:
                         if clauses[0][1][1] == clauses[0][0]:
                             clauses.pop(0)
                 finished = True
+        self.check_for_tautology_in_set_of_literals(clauses)
         return clauses
 
-    def get_list_of_clauses(self):
-        clauses = []
-        for index, clause in enumerate(self.clause):
-            if isinstance(clause, Clause):
-                clauses.append(clause.get_literals())
-        return clauses
+    @staticmethod
+    def check_for_tautology_in_set_of_literals(clauses):
+        for index, clause in enumerate(clauses):
+            literals = []
+            neg_literals = []
+            for i, literal in enumerate(clause):
+                if Operator.NOT.value in literal:
+                    neg_literals.append(literal[1])
+                else:
+                    literals.append(literal)
+            tautology_literals = set(literals) & set(neg_literals)
+            if len(tautology_literals) > 0:
+                print(str(tautology_literals) + " is tautology, literal removed.")
+                clauses[index].remove(list(tautology_literals)[0])
+                clauses[index].remove("¬" + list(tautology_literals)[0])
 
 
 def parse_formula(input_formula):
