@@ -64,7 +64,7 @@ class Clause:
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
                 clause.remove_equivalences()
-            elif clause == Operator.EQUIVALENCE.value and isinstance(self.clause[index - 1], Clause):
+            elif clause == Operator.EQUIVALENCE.value:
                 new_clause1 = Clause(self)
                 new_clause2 = Clause(self)
                 new_clause1.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.IMPLICATION.value,
@@ -174,6 +174,11 @@ class Clause:
                         second_lit.extend(self.clause[2].clause[second_clause_AND_pos + 1:len(self.clause[2].clause)])
                         new_clause.add_clause(second_lit)
                         self.clause = new_clause.clause
+                    elif Operator.AND.value in self.clause[0].clause and Operator.OR.value in self.clause[2].clause:  # [lit AND lit] OR [lit OR lit]
+                        h_clause = self.clause[0].clause
+                        self.clause[0].clause = self.clause[2].clause
+                        self.clause[2].clause = h_clause
+                        self.distribute()
 
                 elif isinstance(self.clause[0], Clause) and isinstance(self.clause[2], str):  # Clause OR lit
                     if Operator.AND.value in self.clause[0].clause:  # [lit AND lit] OR lit
@@ -235,7 +240,9 @@ class Clause:
         if not clauses:
             finished = True
         while not finished:
-            print("New resolvent: " + str(clauses[-1]) + "\nCurrent clauses: " + str(clauses))
+            print("Current clauses: " + str(clauses))
+            if clauses != self.get_list_of_clauses():
+                print("New resolvent: " + str(clauses[-1]))
             canResolve = False
             for c1, clause in enumerate(clauses):
                 if canResolve:
