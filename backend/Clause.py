@@ -58,6 +58,8 @@ class Clause:
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
                 clauses.append(clause.get_literals())
+            else:
+                clauses.extend(clause)
         return clauses
 
     def remove_equivalences(self):
@@ -174,10 +176,9 @@ class Clause:
                         new_clause.add_clause(second_lit)
                         self.clause = new_clause.clause
                     elif Operator.AND.value in self.clause[0].clause and Operator.OR.value in self.clause[2].clause:  # [lit AND lit] OR [lit OR lit]
-                        h_clause = self.clause[0].clause
-                        self.clause[0].clause = self.clause[2].clause
-                        self.clause[2].clause = h_clause
+                        self.clause = [self.clause[2], Operator.OR.value, self.clause[0].clause]
                         self.distribute()
+
                 elif (len(set(self.get_operators())) == 1 and
                       len(self.get_operators()) > 1 and
                       any(isinstance(item, Clause) for item in self.clause)): # lit or lit or lit ... or [[lit OR lit] AND [lit OR lit]]
@@ -190,7 +191,6 @@ class Clause:
                         else:
                             first_clause.append(literal)
                             second_clause.append(literal)
-                    print([first_clause, Operator.AND.value, second_clause])
                     new_clause = Clause()
                     new_clause.add_clause(first_clause)
                     new_clause.add_literal(Operator.AND.value)
@@ -215,9 +215,7 @@ class Clause:
                         self.clause = new_clause.clause
 
                 elif isinstance(self.clause[2], Clause) and isinstance(self.clause[0], str):  # Clause OR lit
-                    h_clause = self.clause[0]
-                    self.clause[0].clause = self.clause[2].clause
-                    self.clause[2].clause = h_clause
+                    self.clause = [self.clause[2], Operator.OR.value, self.clause[0]]
                     self.distribute()
 
     def connect_clauses_with_same_operators(self):
@@ -260,6 +258,7 @@ class Clause:
         resolution_steps = []
         clauses = self.get_list_of_clauses()
         finished = False
+        print(str(clauses) + ".")
         if not clauses:
             finished = True
         while not finished:
@@ -283,13 +282,13 @@ class Clause:
                             elif len(literal2) == 2:
                                 if literal2[1] == literal:
                                     canResolve = True
-
                             if canResolve:
                                 clauses.append(clause[0:l1] + clause[l1 + 1:len(clause)] +
                                                clause2[0:l2] + clause2[l2 + 1:len(clause2)])
                                 clauses.remove(clause)
                                 clauses.remove(clause2)
                                 break
+
             if not canResolve:
                 if len(clauses[0]) == 2:
                     if len(clauses[0][0]) == 2:
@@ -299,7 +298,7 @@ class Clause:
                         if clauses[0][1][1] == clauses[0][0]:
                             clauses.pop(0)
                 finished = True
-        self.check_for_tautology_in_set_of_literals(clauses)
+        #self.check_for_tautology_in_set_of_literals(clauses)
         return clauses, resolution_steps
 
     @staticmethod

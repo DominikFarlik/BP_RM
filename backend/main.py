@@ -1,3 +1,5 @@
+import sys
+
 from Clause import parse_formula, print_formula
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -40,8 +42,8 @@ def process_formula(input_formula):
         result = "Empty clause left -> formula is not feasible."
         return result, steps
     else:
-        print("Final resolvent " + str(set(resolution[0])) + " -> formula is feasible.")
-        result = "Final resolvent " + str(set(resolution[0])) + " -> formula is feasible."
+        print("Final resolvent " + str(resolution) + " -> formula is feasible.")
+        result = "Final resolvent " + str(resolution) + " -> formula is feasible."
         return result, steps
 
 @app.route('/api/solve', methods=['POST'])
@@ -52,7 +54,6 @@ def solve_formula():
         if not formula:
             return jsonify({"error": "No formula provided."}), 400
         result, steps = process_formula(formula)
-        print(result, steps)
         return jsonify({
             "result": result,
             "steps": steps
@@ -63,5 +64,8 @@ def solve_formula():
 
 
 if __name__ == '__main__':
-    process_formula("¬(A∧B)∨(C→(D↔E))")
+    #process_formula("P∨(Q∧R)")
+    process_formula("P→(Q→R)")
+    #process_formula("P→(Q↔R)")
+    #process_formula("P∨(Q↔R)")
     app.run(debug=True)
