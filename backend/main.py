@@ -7,30 +7,34 @@ CORS(app)
 
 def process_formula(input_formula):
     steps = []
-    x = "(A↔B)∧(¬A∨C)∧(C↔D)∧(¬D∨E)∧(B∨¬E)"
 
     steps.append("User input: " + str(input_formula))
     formula = parse_formula(str(input_formula))
+    print(print_formula(formula))
     formula.remove_equivalences()
     steps.append("Removed equivalences: " + print_formula(formula))
-
+    print(print_formula(formula))
     formula.remove_implications()
     steps.append("Removed implications: " + print_formula(formula))
-
+    print(print_formula(formula))
     formula.remove_clause_negations()
     steps.append("Removed clause negations: " + print_formula(formula))
-
+    print(print_formula(formula))
+    formula.distribute()
+    formula.connect_clauses_with_same_operators()
+    formula.connect_clauses_with_same_operators()
     formula.distribute()
     steps.append("Distributed formula: " + print_formula(formula))
-
+    print(print_formula(formula))
     formula.connect_clauses_with_same_operators()
     formula.connect_clauses_with_same_operators()
-    #print("Removed unnecessary brackets: " + print_formula(formula))
-
+    print(print_formula(formula))
     formula.check_for_tautology_in_disjunctions()
-    #print("After check for tautology: " + print_formula(formula))
-
-    resolution = formula.resolute()
+    print(print_formula(formula))
+    resolution, resolution_steps = formula.resolute()
+    steps.extend(resolution_steps)
+#(¬D ∨ E ∨ ¬A ∨ ¬B ∨ ¬C) ∧ (¬E ∨ D ∨ ¬A ∨ ¬B ∨ ¬C)
+#(¬E ∨ D ∨ ¬C ∨ ¬A ∨ ¬B) ∧ (¬D ∨ E ∨ ¬C ∨ ¬A ∨ ¬B)
     if not resolution:
         print("Empty clause left -> formula is not feasible.")
         result = "Empty clause left -> formula is not feasible."
@@ -45,7 +49,6 @@ def solve_formula():
     try:
         data = request.get_json()
         formula = data.get('formula')
-
         if not formula:
             return jsonify({"error": "No formula provided."}), 400
         result, steps = process_formula(formula)
@@ -60,4 +63,5 @@ def solve_formula():
 
 
 if __name__ == '__main__':
+    process_formula("¬(A∧B)∨(C→(D↔E))")
     app.run(debug=True)

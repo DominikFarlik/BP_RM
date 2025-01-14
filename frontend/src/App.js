@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import './App.css';
 
 const LogicFormulaApp = () => {
   const [formula, setFormula] = useState('');
@@ -24,41 +25,43 @@ const LogicFormulaApp = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Propositional Logic Solver</h1>
-      <form onSubmit={handleSubmit} style={{ marginBottom: '20px' }}>
-        <label htmlFor="formula" style={{ marginRight: '10px' }}>Enter formula:</label>
-        <input
-          type="text"
-          id="formula"
-          value={formula}
-          onChange={(e) => setFormula(e.target.value)}
-          style={{ marginRight: '10px', padding: '5px', width: '300px' }}
-        />
-        <button type="submit" style={{ padding: '5px 10px' }}>Submit</button>
-      </form>
+      <div className="container">
+        <h1 className="header">Propositional Logic Solver</h1>
+        <form onSubmit={handleSubmit} className="form">
+          <label htmlFor="formula" className="label">Enter formula:</label>
+          <input
+              type="text"
+              id="formula"
+              value={formula}
+              onChange={(e) => setFormula(e.target.value)}
+              className="input"
+              placeholder="Enter a logical formula..."
+          />
+          <button type="submit" className="button">Solve</button>
+        </form>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <p className="error">{error}</p>}
 
-      {result && (
-        <div>
-          <h2>Result</h2>
-          <p>{result}</p>
-        </div>
-      )}
+        {result && (
+            <div className="result-container">
+              <h2 className="sub-header">Result</h2>
+              <p className="result-text">{result}</p>
+            </div>
+        )}
 
-      {steps.length > 0 && (
-        <div>
-          <h2>Steps</h2>
-          <ol>
-            {steps.map((step, index) => (
-              <li key={index}>{step}</li>
-            ))}
-          </ol>
-        </div>
-      )}
-    </div>
+        {steps.length > 0 && (
+            <div className="steps-container">
+              <h2 className="sub-header">Steps</h2>
+              <ol className="steps-list">
+                {steps.map((step, index) => (
+                    <li key={index} className="step-item">{step}</li>
+                ))}
+              </ol>
+            </div>
+        )}
+      </div>
   );
 };
+
 
 export default LogicFormulaApp;

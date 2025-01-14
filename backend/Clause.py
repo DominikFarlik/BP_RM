@@ -129,8 +129,7 @@ class Clause:
                 clause.distribute()
             if clause == Operator.OR.value:
                 if isinstance(self.clause[0], Clause) and isinstance(self.clause[2], Clause):  # Clause OR Clause
-                    if Operator.AND.value in self.clause[0].clause and Operator.AND.value in self.clause[
-                        2].clause:  # [lit AND lit] OR [lit AND lit]
+                    if Operator.AND.value in self.clause[0].clause and Operator.AND.value in self.clause[2].clause:  # [lit AND lit] OR [lit AND lit]
                         first_clause_AND_pos = self.clause[0].clause.index(Operator.AND.value)
                         second_clause_AND_pos = self.clause[2].clause.index(Operator.AND.value)
                         new_clause = Clause()
@@ -179,10 +178,27 @@ class Clause:
                         self.clause[0].clause = self.clause[2].clause
                         self.clause[2].clause = h_clause
                         self.distribute()
+                elif (len(set(self.get_operators())) == 1 and
+                      len(self.get_operators()) > 1 and
+                      any(isinstance(item, Clause) for item in self.clause)): # lit or lit or lit ... or [[lit OR lit] AND [lit OR lit]]
+                    first_clause = []
+                    second_clause = []
+                    for literal in self.clause:
+                        if isinstance(literal, Clause):
+                            first_clause.extend(literal.clause[0].clause)
+                            second_clause.extend(literal.clause[2].clause)
+                        else:
+                            first_clause.append(literal)
+                            second_clause.append(literal)
+                    print([first_clause, Operator.AND.value, second_clause])
+                    new_clause = Clause()
+                    new_clause.add_clause(first_clause)
+                    new_clause.add_literal(Operator.AND.value)
+                    new_clause.add_clause(second_clause)
+                    self.clause = new_clause.clause
 
                 elif isinstance(self.clause[0], Clause) and isinstance(self.clause[2], str):  # Clause OR lit
                     if Operator.AND.value in self.clause[0].clause:  # [lit AND lit] OR lit
-
                         first_clause_AND_pos = self.clause[0].clause.index(Operator.AND.value)
                         new_clause = Clause()
                         first_lit = []
@@ -197,6 +213,12 @@ class Clause:
                         second_lit.extend(self.clause[2])
                         new_clause.add_clause(second_lit)
                         self.clause = new_clause.clause
+
+                elif isinstance(self.clause[2], Clause) and isinstance(self.clause[0], str):  # Clause OR lit
+                    h_clause = self.clause[0]
+                    self.clause[0].clause = self.clause[2].clause
+                    self.clause[2].clause = h_clause
+                    self.distribute()
 
     def connect_clauses_with_same_operators(self):
         for index, main_clause in enumerate(self.clause):
@@ -235,14 +257,15 @@ class Clause:
                     self.clause.pop(index - 1)
 
     def resolute(self):
+        resolution_steps = []
         clauses = self.get_list_of_clauses()
         finished = False
         if not clauses:
             finished = True
         while not finished:
-            print("Current clauses: " + str(clauses))
+            resolution_steps.append("Current clauses: " + str(clauses))
             if clauses != self.get_list_of_clauses():
-                print("New resolvent: " + str(clauses[-1]))
+                resolution_steps.append("New resolvent: " + str(clauses[-1]))
             canResolve = False
             for c1, clause in enumerate(clauses):
                 if canResolve:
@@ -277,7 +300,7 @@ class Clause:
                             clauses.pop(0)
                 finished = True
         self.check_for_tautology_in_set_of_literals(clauses)
-        return clauses
+        return clauses, resolution_steps
 
     @staticmethod
     def check_for_tautology_in_set_of_literals(clauses):
