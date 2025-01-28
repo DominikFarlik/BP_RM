@@ -65,7 +65,7 @@ def solve_formula():
 
 if __name__ == '__main__':
     #process_formula("P∨(Q∧R)")
-    process_formula("P→(Q→R)")
-    #process_formula("P→(Q↔R)")
+    #process_formula("P→(Q→R)")
+    process_formula("P→(Q↔R)")
     #process_formula("P∨(Q↔R)")
     app.run(debug=True)

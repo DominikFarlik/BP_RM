@@ -180,7 +180,7 @@ class Clause:
                         self.distribute()
 
                 elif (len(set(self.get_operators())) == 1 and
-                      len(self.get_operators()) > 1 and
+                      len(self.get_operators()) >= 1 and
                       any(isinstance(item, Clause) for item in self.clause)): # lit or lit or lit ... or [[lit OR lit] AND [lit OR lit]]
                     first_clause = []
                     second_clause = []
