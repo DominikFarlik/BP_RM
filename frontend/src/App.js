@@ -1,67 +1,46 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import './App.css';
+import React, { useState } from "react";
+import { BrowserRouter as Router, Route, Routes, Navigate, Link } from "react-router-dom";
+import Login from "./Login";
+import Register from "./Register";
+import Solve from "./Solve";
 
-const LogicFormulaApp = () => {
-  const [formula, setFormula] = useState('');
-  const [result, setResult] = useState(null);
-  const [steps, setSteps] = useState([]);
-  const [error, setError] = useState('');
+function App() {
+  const [token, setToken] = useState(localStorage.getItem("token"));
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setResult(null);
-    setSteps([]);
-
-    try {
-      const response = await axios.post('http://localhost:5000/api/solve', { formula });
-      setResult(response.data.result);
-      setSteps(response.data.steps);
-    } catch (err) {
-      setError('An error occurred while processing the formula. Please try again.');
-      console.error(err);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setToken(null);
   };
 
   return (
-      <div className="container">
-        <h1 className="header">Propositional Logic Solver</h1>
-        <form onSubmit={handleSubmit} className="form">
-          <label htmlFor="formula" className="label">Enter formula:</label>
-          <input
-              type="text"
-              id="formula"
-              value={formula}
-              onChange={(e) => setFormula(e.target.value)}
-              className="input"
-              placeholder="Enter a logical formula..."
+    <Router>
+      <div className="App">
+        {/* Navigation Bar */}
+        <nav className="navbar">
+          {!token ? (
+            <>
+              <Link to="/login" className="nav-link">Login</Link>
+              <Link to="/register" className="nav-link">Register</Link>
+            </>
+          ) : (
+            <button className="logout-button" onClick={handleLogout}>
+              Logout
+            </button>
+          )}
+        </nav>
+
+        {/* Routes */}
+        <Routes>
+          <Route path="/login" element={<Login setToken={setToken} />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/solve"
+            element={token ? <Solve token={token} /> : <Navigate to="/login" />}
           />
-          <button type="submit" className="button">Solve</button>
-        </form>
-
-        {error && <p className="error">{error}</p>}
-
-        {result && (
-            <div className="result-container">
-              <h2 className="sub-header">Result</h2>
-              <p className="result-text">{result}</p>
-            </div>
-        )}
-
-        {steps.length > 0 && (
-            <div className="steps-container">
-              <h2 className="sub-header">Steps</h2>
-              <ol className="steps-list">
-                {steps.map((step, index) => (
-                    <li key={index} className="step-item">{step}</li>
-                ))}
-              </ol>
-            </div>
-        )}
+        </Routes>
       </div>
+    </Router>
   );
-};
+}
 
-
-export default LogicFormulaApp;
+export default App;
