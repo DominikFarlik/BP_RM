@@ -1,6 +1,7 @@
+import copy
 import sys
 
-from Clause import parse_formula, print_formula
+from Clause import parse_formula, formula_to_str
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -32,31 +33,32 @@ def process_formula(input_formula):
 
     steps.append("User input: " + str(input_formula))
     formula = parse_formula(str(input_formula))
-    print(print_formula(formula))
+    print(formula_to_str(formula))
     formula.remove_equivalences()
-    steps.append("Removed equivalences: " + print_formula(formula))
-    print(print_formula(formula))
+    steps.append("Removed equivalences: " + formula_to_str(formula))
+    print(formula_to_str(formula))
     formula.remove_implications()
-    steps.append("Removed implications: " + print_formula(formula))
-    print(print_formula(formula))
+    steps.append("Removed implications: " + formula_to_str(formula))
+    print(formula_to_str(formula))
     formula.remove_clause_negations()
-    steps.append("Removed clause negations: " + print_formula(formula))
-    print(print_formula(formula))
-    formula.distribute()
+    steps.append("Removed clause negations: " + formula_to_str(formula))
+    print(formula_to_str(formula))
+
+    while True:
+        formula_before_distribution = copy.deepcopy(formula)
+        formula.distribute()
+        formula.connect_clauses_with_same_operators()
+        if formula_to_str(formula_before_distribution) == formula_to_str(formula):
+            break
+
+    steps.append("Distributed formula: " + formula_to_str(formula))
+    print(formula_to_str(formula))
     formula.connect_clauses_with_same_operators()
-    formula.connect_clauses_with_same_operators()
-    formula.distribute()
-    steps.append("Distributed formula: " + print_formula(formula))
-    print(print_formula(formula))
-    formula.connect_clauses_with_same_operators()
-    formula.connect_clauses_with_same_operators()
-    print(print_formula(formula))
-    formula.check_for_tautology_in_disjunctions()
-    print(print_formula(formula))
+    print(formula_to_str(formula))
+
     resolution, resolution_steps = formula.resolute()
     steps.extend(resolution_steps)
-#(¬D ∨ E ∨ ¬A ∨ ¬B ∨ ¬C) ∧ (¬E ∨ D ∨ ¬A ∨ ¬B ∨ ¬C)
-#(¬E ∨ D ∨ ¬C ∨ ¬A ∨ ¬B) ∧ (¬D ∨ E ∨ ¬C ∨ ¬A ∨ ¬B)
+
     if not resolution:
         print("Empty clause left -> formula is not feasible.")
         result = "Empty clause left -> formula is not feasible."
@@ -132,8 +134,12 @@ def login_user():
 
 
 if __name__ == '__main__':
-    #process_formula("P∨(Q∧R)")
-    #process_formula("P→(Q→R)")
+    print("\nP∨(Q∧R):")
+    process_formula("P∨(Q∧R)")
+    print("\nP→(Q→R):")
+    process_formula("P→(Q→R)")
+    print("\nP→(Q↔R):")
     process_formula("P→(Q↔R)")
-    #process_formula("P∨(Q↔R)")
-    app.run(debug=True)
+    print("\nP∨(Q↔R):")
+    process_formula("P∨(Q↔R)")
+    #app.run(debug=True)

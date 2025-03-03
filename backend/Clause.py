@@ -69,10 +69,8 @@ class Clause:
             elif clause == Operator.EQUIVALENCE.value:
                 new_clause1 = Clause(self)
                 new_clause2 = Clause(self)
-                new_clause1.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.IMPLICATION.value,
-                                        copy.deepcopy(self.clause[index + 1])])
-                new_clause2.set_clause([copy.deepcopy(self.clause[index + 1]), Operator.IMPLICATION.value,
-                                        copy.deepcopy(self.clause[index - 1])])
+                new_clause1.set_clause([copy.deepcopy(self.clause[index - 1]), Operator.IMPLICATION.value, copy.deepcopy(self.clause[index + 1])])
+                new_clause2.set_clause([copy.deepcopy(self.clause[index + 1]), Operator.IMPLICATION.value, copy.deepcopy(self.clause[index - 1])])
                 self.clause = [new_clause1, Operator.AND.value, new_clause2]
 
     def remove_implications(self):
@@ -159,8 +157,9 @@ class Clause:
                         fourth_lit.extend(self.clause[2].clause[second_clause_AND_pos + 1:len(self.clause[2].clause)])
                         new_clause.add_clause(fourth_lit)
                         self.clause = new_clause.clause
-                    elif Operator.OR.value in self.clause[0].clause and Operator.AND.value in self.clause[
-                        2].clause:  # [lit OR lit] OR [lit AND lit]
+
+                    # [lit OR lit] OR [lit AND lit]
+                    elif Operator.OR.value in self.clause[0].clause and Operator.AND.value in self.clause[2].clause:
                         second_clause_AND_pos = self.clause[2].clause.index(Operator.AND.value)
                         new_clause = Clause()
                         first_lit = []
@@ -175,13 +174,14 @@ class Clause:
                         second_lit.extend(self.clause[2].clause[second_clause_AND_pos + 1:len(self.clause[2].clause)])
                         new_clause.add_clause(second_lit)
                         self.clause = new_clause.clause
-                    elif Operator.AND.value in self.clause[0].clause and Operator.OR.value in self.clause[2].clause:  # [lit AND lit] OR [lit OR lit]
+
+                    # [lit AND lit] OR [lit OR lit]
+                    elif Operator.AND.value in self.clause[0].clause and Operator.OR.value in self.clause[2].clause:
                         self.clause = [self.clause[2], Operator.OR.value, self.clause[0].clause]
                         self.distribute()
 
-                elif (len(set(self.get_operators())) == 1 and
-                      len(self.get_operators()) >= 1 and
-                      any(isinstance(item, Clause) for item in self.clause)): # lit or lit or lit ... or [[lit OR lit] AND [lit OR lit]]
+                # lit or lit or lit ... or [Clause]
+                elif len(set(self.get_operators())) == 1 and len(self.get_operators()) > 1 and any(isinstance(item, Clause) for item in self.clause):
                     first_clause = []
                     second_clause = []
                     for literal in self.clause:
@@ -197,8 +197,29 @@ class Clause:
                     new_clause.add_clause(second_clause)
                     self.clause = new_clause.clause
 
-                elif isinstance(self.clause[0], Clause) and isinstance(self.clause[2], str):  # Clause OR lit
-                    if Operator.AND.value in self.clause[0].clause:  # [lit AND lit] OR lit
+                # Clause OR not lit
+                elif isinstance(self.clause[0], Clause) and self.clause[2] == Operator.NOT.value and isinstance(self.clause[3], str):
+                    # [lit AND lit] OR not lit
+                    if Operator.AND.value in self.clause[0].clause:
+                        first_clause_AND_pos = self.clause[0].clause.index(Operator.AND.value)
+                        new_clause = Clause()
+                        first_lit = []
+                        second_lit = []
+                        first_lit.extend(self.clause[0].clause[0:first_clause_AND_pos])
+                        first_lit.append(Operator.OR.value)
+                        first_lit.extend([self.clause[2], self.clause[3]])
+                        new_clause.add_clause(first_lit)
+                        new_clause.add_literal(Operator.AND.value)
+                        second_lit.extend(self.clause[0].clause[first_clause_AND_pos + 1:len(self.clause[0].clause)])
+                        second_lit.append(Operator.OR.value)
+                        second_lit.extend([self.clause[2], self.clause[3]])
+                        new_clause.add_clause(second_lit)
+                        self.clause = new_clause.clause
+
+                # Clause OR lit
+                elif isinstance(self.clause[0], Clause) and isinstance(self.clause[2], str):
+                    # [lit AND lit] OR lit
+                    if Operator.AND.value in self.clause[0].clause:
                         first_clause_AND_pos = self.clause[0].clause.index(Operator.AND.value)
                         new_clause = Clause()
                         first_lit = []
@@ -214,8 +235,13 @@ class Clause:
                         new_clause.add_clause(second_lit)
                         self.clause = new_clause.clause
 
-                elif isinstance(self.clause[2], Clause) and isinstance(self.clause[0], str):  # Clause OR lit
+                # lit OR Clause
+                elif isinstance(self.clause[0], str) and isinstance(self.clause[2], Clause):
                     self.clause = [self.clause[2], Operator.OR.value, self.clause[0]]
+                    self.distribute()
+                # not lit OR Clause
+                elif self.clause[0] == Operator.NOT.value and isinstance(self.clause[1], str) and isinstance(self.clause[3], Clause):
+                    self.clause = [self.clause[3], Operator.OR.value, self.clause[0], self.clause[1]]
                     self.distribute()
 
     def connect_clauses_with_same_operators(self):
@@ -237,26 +263,10 @@ class Clause:
                     new_clause.extend(self.clause[index + 1:len(self.clause)])
                     self.clause = new_clause
 
-    def check_for_tautology_in_disjunctions(self):
-        for index, clause in enumerate(self.clause):
-            if isinstance(clause, Clause):
-                literals = []
-                neg_literals = []
-                for i, literal in enumerate(clause.clause):
-                    if literal.isalpha():
-                        if clause.clause[i - 1] == Operator.NOT.value:
-                            neg_literals.append(literal)
-                        else:
-                            literals.append(literal)
-                tautology_literals = set(literals) & set(neg_literals)
-                if len(tautology_literals) > 0:
-                    print(str(tautology_literals) + " is tautology, literal removed.")
-                    self.clause.pop(index)
-                    self.clause.pop(index - 1)
-
     def resolute(self):
         resolution_steps = []
         clauses = self.get_list_of_clauses()
+        print(clauses)
         finished = False
         print(str(clauses) + ".")
         if not clauses:
@@ -332,12 +342,12 @@ def parse_formula(input_formula):
     return formula
 
 
-def print_formula(formula):
+def formula_to_str(formula):
     """Return formula in readable format"""
     out_formula = ""
     for clause in formula.clause:
         if isinstance(clause, Clause):
-            out_formula += "(" + str(print_formula(clause)) + ")"
+            out_formula += "(" + str(formula_to_str(clause)) + ")"
         else:
             out_formula += clause
     return out_formula
