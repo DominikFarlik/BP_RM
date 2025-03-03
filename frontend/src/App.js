@@ -37,6 +37,7 @@ function App() {
             path="/solve"
             element={token ? <Solve token={token} /> : <Navigate to="/login" />}
           />
+          <Route path="/" element={token ? <Navigate to="/solve" /> : <Navigate to="/login" />} />
         </Routes>
       </div>
     </Router>
