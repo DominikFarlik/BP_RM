@@ -58,7 +58,11 @@ class Clause:
         for index, clause in enumerate(self.clause):
             if isinstance(clause, Clause):
                 clauses.append(clause.get_literals())
-            else:
+            elif clause == Operator.AND.value or clause == Operator.OR.value:
+                pass
+            elif clause.isalpha() and self.clause[index - 1] == Operator.NOT.value:
+                clauses.append(Operator.NOT.value + clause)
+            elif clause.isalpha():
                 clauses.extend(clause)
         return clauses
 
