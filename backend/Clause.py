@@ -10,6 +10,58 @@ class Operator(Enum):
     EQUIVALENCE = "↔"
 
 
+def convert_to_set_of_clauses(clauses):
+    clause_set = ""
+    if not clauses:
+        return "{}"
+    for lit in clauses:
+        if isinstance(lit, list):
+            clause_set += "{" + ', '.join(lit) + "} "
+        elif isinstance(lit, str):
+            clause_set += "{" + ', '.join(clauses) + "} "
+            break
+    return clause_set
+
+
+def process_formula(input_formula):
+    steps = ["User input: " + str(input_formula)]
+    formula = parse_formula(str(input_formula))
+    print(formula_to_str(formula))
+    formula.remove_equivalences()
+    steps.append("Removed equivalences: " + formula_to_str(formula))
+    print(formula_to_str(formula))
+    formula.remove_implications()
+    steps.append("Removed implications: " + formula_to_str(formula))
+    print(formula_to_str(formula))
+    formula.remove_clause_negations()
+    steps.append("Removed clause negations: " + formula_to_str(formula))
+    print(formula_to_str(formula))
+
+    while True:
+        formula_before_distribution = copy.deepcopy(formula)
+        formula.distribute()
+        formula.connect_clauses_with_same_operators()
+        if formula_to_str(formula_before_distribution) == formula_to_str(formula):
+            break
+
+    steps.append("Distributed formula: " + formula_to_str(formula))
+    print(formula_to_str(formula))
+    formula.connect_clauses_with_same_operators()
+    print(formula_to_str(formula))
+
+    resolution, resolution_steps = formula.resolute()
+    steps.extend(resolution_steps)
+    if resolution:
+        print("Final resolvent: " + convert_to_set_of_clauses(resolution) + "Formula is not feasible.")
+        result = "Final resolvent: " + convert_to_set_of_clauses(resolution) + "Formula is not feasible."
+        return result, steps
+    else:
+        print("Empty clause left -> Formula is feasible.")
+        result = "Empty clause left -> Formula is feasible."
+        return result, steps
+
+
+
 class Clause:
     def __init__(self, parent=None):
         self.clause = []
@@ -270,50 +322,70 @@ class Clause:
     def resolute(self):
         resolution_steps = []
         clauses = self.get_list_of_clauses()
-        print(clauses)
-        finished = False
-        print(str(clauses) + ".")
-        if not clauses:
-            finished = True
-        while not finished:
-            resolution_steps.append("Current clauses: " + str(clauses))
-            if clauses != self.get_list_of_clauses():
-                resolution_steps.append("New resolvent: " + str(clauses[-1]))
-            canResolve = False
-            for c1, clause in enumerate(clauses):
-                if canResolve:
+        resolution_steps.append("Set of clauses for resolution: " + convert_to_set_of_clauses(clauses))
+        new_resolvent = False
+        while True:
+            if new_resolvent:
+                new_resolvent = False
+            for c1 in clauses:
+                if new_resolvent:
                     break
-                for l1, literal in enumerate(clause):
-                    if canResolve:
+                for l1 in c1:
+                    if new_resolvent:
                         break
-                    for c2, clause2 in enumerate(clauses):
-                        if c1 == c2 or canResolve:
+                    for c2 in clauses:
+                        if new_resolvent:
                             break
-                        for l2, literal2 in enumerate(clause2):
-                            if len(literal) == 2:
-                                if literal[1] == literal2:
-                                    canResolve = True
-                            elif len(literal2) == 2:
-                                if literal2[1] == literal:
-                                    canResolve = True
-                            if canResolve:
-                                clauses.append(clause[0:l1] + clause[l1 + 1:len(clause)] +
-                                               clause2[0:l2] + clause2[l2 + 1:len(clause2)])
-                                clauses.remove(clause)
-                                clauses.remove(clause2)
-                                break
-
-            if not canResolve:
-                if len(clauses[0]) == 2:
-                    if len(clauses[0][0]) == 2:
-                        if clauses[0][0][1] == clauses[0][1]:
-                            clauses.pop(0)
-                    elif len(clauses[0][1]) == 2:
-                        if clauses[0][1][1] == clauses[0][0]:
-                            clauses.pop(0)
-                finished = True
-        #self.check_for_tautology_in_set_of_literals(clauses)
+                        for l2 in c2:
+                            if len(l1) == 1:
+                                if Operator.NOT.value + l1 == l2:
+                                    resolvent = self.get_resolvent(c1, c2)
+                                    resolution_steps.append("Remaining clauses" + convert_to_set_of_clauses(clauses))
+                                    steps = []
+                                    steps.extend("From clause: " + convert_to_set_of_clauses(c1))
+                                    steps.extend(", and: " + convert_to_set_of_clauses(c2) + ".")
+                                    steps.extend(" New resolvent: " + convert_to_set_of_clauses(resolvent))
+                                    resolution_steps.append(steps)
+                                    clauses.remove(c1)
+                                    clauses.remove(c2)
+                                    if resolvent:
+                                        clauses.append(resolvent)
+                                    new_resolvent = True
+                                    break
+                            if len(l1) == 2:
+                                if l1[1] == l2:
+                                    resolvent = self.get_resolvent(c1, c2)
+                                    resolution_steps.append("Remaining clauses" + convert_to_set_of_clauses(clauses))
+                                    steps = []
+                                    steps.extend("From clause: " + convert_to_set_of_clauses(c1))
+                                    steps.extend(", and: " + convert_to_set_of_clauses(c2) + ".")
+                                    steps.extend(" New resolvent: " + convert_to_set_of_clauses(resolvent))
+                                    resolution_steps.append(steps)
+                                    clauses.remove(c1)
+                                    clauses.remove(c2)
+                                    if resolvent:
+                                        clauses.append(resolvent)
+                                    new_resolvent = True
+                                    break
+            if not new_resolvent:
+                break
+        resolution_steps.append("Result: " + convert_to_set_of_clauses(clauses))
         return clauses, resolution_steps
+
+    @staticmethod
+    def get_resolvent(c1, c2):
+        same_literals = []
+        for l1 in c1:
+            if len(l1) == 1:
+                if Operator.NOT.value + l1 in c2:
+                    same_literals.extend([l1, str(Operator.NOT.value + l1)])
+            elif len(l1) == 2:
+                if l1[1] in c2:
+                    same_literals.extend([l1[1], l1])
+        clause_sum = c1 + c2
+        resolvent = [lit for lit in clause_sum if lit not in same_literals]
+        return list(set(resolvent))
+
 
     @staticmethod
     def check_for_tautology_in_set_of_literals(clauses):

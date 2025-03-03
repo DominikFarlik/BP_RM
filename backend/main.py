@@ -1,7 +1,7 @@
 import copy
 import sys
 
-from Clause import parse_formula, formula_to_str
+from Clause import process_formula
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -27,46 +27,6 @@ class User(db.Model):
 # Initialize database
 with app.app_context():
     db.create_all()
-
-def process_formula(input_formula):
-    steps = []
-
-    steps.append("User input: " + str(input_formula))
-    formula = parse_formula(str(input_formula))
-    print(formula_to_str(formula))
-    formula.remove_equivalences()
-    steps.append("Removed equivalences: " + formula_to_str(formula))
-    print(formula_to_str(formula))
-    formula.remove_implications()
-    steps.append("Removed implications: " + formula_to_str(formula))
-    print(formula_to_str(formula))
-    formula.remove_clause_negations()
-    steps.append("Removed clause negations: " + formula_to_str(formula))
-    print(formula_to_str(formula))
-
-    while True:
-        formula_before_distribution = copy.deepcopy(formula)
-        formula.distribute()
-        formula.connect_clauses_with_same_operators()
-        if formula_to_str(formula_before_distribution) == formula_to_str(formula):
-            break
-
-    steps.append("Distributed formula: " + formula_to_str(formula))
-    print(formula_to_str(formula))
-    formula.connect_clauses_with_same_operators()
-    print(formula_to_str(formula))
-
-    resolution, resolution_steps = formula.resolute()
-    steps.extend(resolution_steps)
-
-    if not resolution:
-        print("Empty clause left -> formula is not feasible.")
-        result = "Empty clause left -> formula is not feasible."
-        return result, steps
-    else:
-        print("Final resolvent " + str(resolution) + " -> formula is feasible.")
-        result = "Final resolvent " + str(resolution) + " -> formula is feasible."
-        return result, steps
 
 @app.route('/api/solve', methods=['POST'])
 def solve_formula():
@@ -134,12 +94,12 @@ def login_user():
 
 
 if __name__ == '__main__':
-    print("\nP∨(Q∧R):")
-    process_formula("P∨(Q∧R)")
-    print("\nP→(Q→R):")
-    process_formula("P→(Q→R)")
-    print("\nP→(Q↔R):")
-    process_formula("P→(Q↔R)")
-    print("\nP∨(Q↔R):")
-    process_formula("P∨(Q↔R)")
-    #app.run(debug=True)
+    #print("\nP∨(Q∧R):")
+    #process_formula("P∨(Q∧R)")
+    #print("\nP→(Q→R):")
+    #process_formula("P→(Q→R)")
+    #print("\nP→(Q↔R):")
+    #process_formula("P→(Q↔R)")
+    #print("\nP∨(Q↔R):")
+    process_formula("(A↔B)∧(¬A∨C)∧(C↔D)∧(¬D∨E)∧(B∨¬E)")
+    app.run(debug=True)
