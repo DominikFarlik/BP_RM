@@ -22,15 +22,16 @@ function Login({ setToken }) {
   };
 
   return (
-    <div className="login-container">
-      <h2>Login</h2>
+    <div className="container">
+      <h1 className="header">Login</h1>
       {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleLogin} className="form">
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          className="input"
           required
         />
         <input
@@ -38,9 +39,10 @@ function Login({ setToken }) {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="input"
           required
         />
-        <button type="submit">Login</button>
+        <button type="submit" className="button">Login</button>
       </form>
     </div>
   );

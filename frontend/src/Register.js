@@ -20,16 +20,17 @@ function Register() {
   };
 
   return (
-    <div className="register-container">
-      <h2>Register</h2>
+    <div className="container">
+      <h1 className="header">Register</h1>
       {message && <p style={{ color: "green" }}>{message}</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleRegister}>
+      <form onSubmit={handleRegister} className="form">
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          className="input"
           required
         />
         <input
@@ -37,9 +38,10 @@ function Register() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="input"
           required
         />
-        <button type="submit">Register</button>
+        <button type="submit" className="button">Register</button>
       </form>
     </div>
   );
