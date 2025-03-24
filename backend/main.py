@@ -1,7 +1,7 @@
 import copy
 import sys
 
-from Clause import process_formula
+from Clause import convert_to_cnf
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -94,12 +94,5 @@ def login_user():
 
 
 if __name__ == '__main__':
-    #print("\nP∨(Q∧R):")
-    #process_formula("P∨(Q∧R)")
-    #print("\nP→(Q→R):")
-    #process_formula("P→(Q→R)")
-    #print("\nP→(Q↔R):")
-    #process_formula("P→(Q↔R)")
-    #print("\nP∨(Q↔R):")
-    process_formula("(A↔B)∧(¬A∨C)∧(C↔D)∧(¬D∨E)∧(B∨¬E)")
-    app.run(debug=True)
+    convert_to_cnf("(A → B) ∧ (¬A ∨ C) ∧ (C ↔ D) ∧ (¬D ∨ E) ∧ (B ∨ ¬E)")
+    #app.run(debug=True)
