@@ -47,13 +47,8 @@ def split_to_list_of_literals(formula):
     clauses_str = formula.split(' ∧ ')
 
     for clause in clauses_str:
-        current_clause = []
-        literals = clause.split(' ∨ ')
-
-        for literal in literals:
-            literal = literal.strip()
-            current_clause.append(literal)
-
+        clause = clause.replace("(", "").replace(")", "")
+        current_clause = clause.split(' ∨ ')
         clauses.append(current_clause)
 
     return clauses
