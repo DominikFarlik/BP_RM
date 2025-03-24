@@ -1,10 +1,7 @@
-import copy
-import sys
-
-from Clause import convert_to_cnf
+from solve import solve
 from flask import Flask, jsonify, request
-from flask_cors import CORS
-from flask_bcrypt import Bcrypt
+from flask_cors import CORS  # type: ignore
+from flask_bcrypt import Bcrypt  # type: ignore
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token
 
@@ -19,14 +16,17 @@ app.config['JWT_SECRET_KEY'] = 'jwt_secret_key'
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 
-class User(db.Model):
+
+class User(db.Model):  # type: ignore
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    
+
+
 # Initialize database
 with app.app_context():
     db.create_all()
+
 
 @app.route('/api/solve', methods=['POST'])
 def solve_formula():
@@ -35,7 +35,7 @@ def solve_formula():
         formula = data.get('formula')
         if not formula:
             return jsonify({"error": "No formula provided."}), 400
-        result, steps = process_formula(formula)
+        result, steps = solve(formula)
         return jsonify({
             "result": result,
             "steps": steps
@@ -43,6 +43,7 @@ def solve_formula():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # API: Register user
 @app.route('/api/register', methods=['POST'])
@@ -66,6 +67,7 @@ def register_user():
         return jsonify({"message": "User registered successfully."}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # API: Login user
 @app.route('/api/login', methods=['POST'])
@@ -94,5 +96,5 @@ def login_user():
 
 
 if __name__ == '__main__':
-    convert_to_cnf("(A → B) ∧ (¬A ∨ C) ∧ (C ↔ D) ∧ (¬D ∨ E) ∧ (B ∨ ¬E)")
+    solve("(A → B) ∧ (¬A ∨ C) ∧ (C ↔ D) ∧ (¬D ∨ E) ∧ (B ∨ ¬E)")
     #app.run(debug=True)
