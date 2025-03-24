@@ -33,7 +33,27 @@ def convert_to_cnf(formula):
     symbols_dict = {var: symbols(var) for var in variables}
     expr = eval(translated_formula, symbols_dict)
     formula_in_cnf = to_cnf(expr)
-    print(satisfiable(formula_in_cnf))
     result_formula = str(formula_in_cnf)
     result_formula_back_translated = result_formula.translate(REVERSE_OPERATOR_TRANSLATOR)
+    print(satisfiable(formula_in_cnf))
+    print(formula_in_cnf)
     print(result_formula_back_translated)
+
+    print(split_to_list_of_literals(result_formula_back_translated))
+
+def split_to_list_of_literals(formula):
+    clauses = []
+
+    clauses_str = formula.split(' ∧ ')
+
+    for clause in clauses_str:
+        current_clause = []
+        literals = clause.split(' ∨ ')
+
+        for literal in literals:
+            literal = literal.strip()
+            current_clause.append(literal)
+
+        clauses.append(current_clause)
+
+    return clauses
