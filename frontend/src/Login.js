@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { loginUser } from "./Api";
+import AuthForm from "./AuthForm";
 
 function Login({ setToken }) {
   const [username, setUsername] = useState("");
@@ -22,29 +23,7 @@ function Login({ setToken }) {
   };
 
   return (
-    <div className="container">
-      <h1 className="header">Login</h1>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleLogin} className="form">
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="input"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="input"
-          required
-        />
-        <button type="submit" className="button">Login</button>
-      </form>
-    </div>
+    <AuthForm type="login" onSubmit={handleLogin} />
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { registerUser } from "./Api";
+import AuthForm from "./AuthForm";
 
 function Register() {
   const [username, setUsername] = useState("");
@@ -20,30 +21,7 @@ function Register() {
   };
 
   return (
-    <div className="container">
-      <h1 className="header">Register</h1>
-      {message && <p style={{ color: "green" }}>{message}</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleRegister} className="form">
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="input"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="input"
-          required
-        />
-        <button type="submit" className="button">Register</button>
-      </form>
-    </div>
+    <AuthForm type="register" onSubmit={handleRegister} />
   );
 }
 
