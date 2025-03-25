@@ -1,27 +1,24 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { registerUser } from "./Api";
 import AuthForm from "./AuthForm";
 
 function Register() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  const handleRegister = async ({ username, password }) => {
     try {
       await registerUser(username, password);
-      setMessage("Registration successful! You can now log in.");
-      setUsername("");
-      setPassword("");
+      setError("");
+      navigate("/login", { state: { message: "Registration successful! You can now log in." } });
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
     }
   };
 
   return (
-    <AuthForm type="register" onSubmit={handleRegister} />
+    <AuthForm type="register" onSubmit={handleRegister} error={error}/>
   );
 }
 
