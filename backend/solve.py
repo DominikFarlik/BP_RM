@@ -1,5 +1,4 @@
 from sympy import symbols  # type: ignore
-from sympy import Expr
 from sympy.logic.boolalg import to_cnf  # type: ignore
 from sympy.logic.inference import satisfiable  # type: ignore
 import re
@@ -35,8 +34,8 @@ def solve(formula: str):
     cnf_str = str(cnf)
     back_translated_formula = cnf_str.translate(REVERSE_OPERATOR_TRANSLATOR)
     clause_list = split_to_list_of_literals(back_translated_formula)
-    after_resolution = resolution(clause_list)
-    print("Výsledek:", clauses_to_string(after_resolution))
+    steps = resolution(clause_list)
+    return steps
 
 
 def prepare_for_cnf(formula: str) -> str:
@@ -61,14 +60,18 @@ def split_to_list_of_literals(formula: str) -> list[list[str]]:
 
 
 def resolution(clauses):
-    print("Množina klauzulí: ", clauses_to_string(clauses))
+    if clauses[0][0] == "True":
+        return ["Formule je tautologie, není potřeba použít rezoluční metodu."]
+    else:
+        steps = ["Množina klauzulí: %s" % clauses_to_string(clauses)]
+
     def update_clauses(clause1, clause2):
         resolvent = make_resolvent(clause1, clause2)
-        print("Z klauzulí:", clauses_to_string([clause1]), "a", clauses_to_string([clause2]), "vznikne resolventa:", clauses_to_string([resolvent]))
+        steps.append("Z klauzulí: " + clauses_to_string([clause1]) + " a " + clauses_to_string([clause2]) + " vznikne resolventa: " + clauses_to_string([resolvent]))
         clauses.remove(clause1)
         clauses.remove(clause2)
         clauses.append(resolvent)
-        print("Zbývající klauzule:", clauses_to_string(clauses))
+        steps.append("Zbývající klauzule: %s" % clauses_to_string(clauses))
 
     found = False
     while True:
@@ -96,7 +99,7 @@ def resolution(clauses):
             if found:
                 break
         if not found:
-            return clauses
+            return steps
 
 
 def make_resolvent(clause: list, clause2: list) -> list:

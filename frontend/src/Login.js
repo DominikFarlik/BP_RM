@@ -15,7 +15,7 @@ function Login({ setToken }) {
       const token = response.data.access_token;
       setToken(token);
       localStorage.setItem("token", token);
-      navigate("/solve"); // Redirect to /solve after login
+      navigate("/solve");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
     }

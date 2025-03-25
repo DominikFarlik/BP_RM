@@ -47,7 +47,7 @@ def solve_formula():
 
 # API: Register user
 @app.route('/api/register', methods=['POST'])
-def register_user():
+def register():
     try:
         data = request.get_json()
         username = data.get('username')
@@ -71,7 +71,7 @@ def register_user():
 
 # API: Login user
 @app.route('/api/login', methods=['POST'])
-def login_user():
+def login():
     try:
         data = request.get_json()
         username = data.get('username')
@@ -96,5 +96,4 @@ def login_user():
 
 
 if __name__ == '__main__':
-    solve("(A → B) ∧ (¬A ∨ C) ∧ (C ↔ D) ∧ (¬D ∨ E) ∧ (B ∨ ¬E)")
-    #app.run(debug=True)
+    app.run(debug=True)
