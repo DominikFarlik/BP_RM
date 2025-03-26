@@ -6,8 +6,10 @@ import {useNavigate} from 'react-router-dom';
 const LogicFormulaApp = () => {
     const [formula, setFormula] = useState('');
     const [steps, setSteps] = useState([]);
+    const [result, setResult] = useState(null);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const [bgColor, setBgColor] = useState("white");
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -20,6 +22,7 @@ const LogicFormulaApp = () => {
         e.preventDefault();
         setError('');
         setSteps([]);
+        setResult(null);
 
         const token = localStorage.getItem('token');
         if (!token) {
@@ -39,6 +42,8 @@ const LogicFormulaApp = () => {
                 }
             );
             setSteps(response.data.steps);
+            setResult(response.data.result);
+            setBgColor(result ? "green" : "red");
         } catch (err) {
             if (err.response && err.response.status === 401) {
                 setError('Session expired. Please log in again.');
@@ -69,8 +74,13 @@ const LogicFormulaApp = () => {
                 <div>
                     <h2 className="sub-header">Postup řešení</h2>
                     <ul className="list-group list-group-flush">
-                        {steps.map(step => (
-                            <div className="list-group-item">{step}</div>
+                        {steps.map((step, index) => (
+                            <div key={index} className="list-group-item" style={{
+                                backgroundColor: index === steps.length - 1 ? (result ? "#198754" : "#dc3545") : "transparent",
+                                color: index === steps.length - 1 ? "white" : "black",
+                            }}>
+                                {step}
+                            </div>
                         ))}
                     </ul>
                 </div>

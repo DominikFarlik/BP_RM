@@ -96,8 +96,9 @@ def solve(formula: str):
     back_translated_formula = cnf_str.translate(REVERSE_OPERATOR_TRANSLATOR)
     steps.append("Převod do kunjuktivní normální formy: %s" % back_translated_formula)
     clause_list = split_to_list_of_literals(back_translated_formula)
-    steps.extend(resolution(clause_list))
-    return steps
+    resolution_steps, result = resolution(clause_list)
+    steps.extend(resolution_steps)
+    return steps, result
 
 
 def prepare_for_cnf(formula: str) -> str:
@@ -127,8 +128,7 @@ def resolution(clauses):
     if clauses[0][0] == "True":
         return ["Formule je tautologie, není potřeba použít rezoluční metodu."]
     else:
-        steps = ["Použití rezoluční metody:"]
-        steps.append("Množina klauzulí: %s" % clauses_to_string(clauses))
+        steps = ["Použití rezoluční metody:", "Množina klauzulí: %s" % clauses_to_string(clauses)]
 
     def update_clauses(clause1, clause2):
         resolvent = make_resolvent(copy.deepcopy(clause1), copy.deepcopy(clause2))
@@ -166,7 +166,16 @@ def resolution(clauses):
             if found:
                 break
         if not found:
-            return steps
+            steps.pop()
+            result = get_result(clauses)
+            steps.append("Zbytek po použití rezoluční metody: %s" % clauses_to_string(result))
+            if result:
+                steps.append("Formule není splnitelná")
+                return steps, False
+            else:
+                steps.append("Formule je splnitelná")
+                return steps, True
+
 
 
 def make_resolvent(clause: list, clause2: list) -> list:
@@ -190,3 +199,11 @@ def clauses_to_string(clauses: list[list[str]]) -> str:
         clauses_str += "{"
         clauses_str += ", ".join(clause) + "},"
     return clauses_str[:-1]
+
+
+def get_result(clauses):
+    for clause in clauses:
+        if not clause:
+            clauses.remove(clause)
+    print(clauses)
+    return clauses

@@ -35,9 +35,10 @@ def solve_formula():
         formula = data.get('formula')
         if not formula:
             return jsonify({"error": "No formula provided."}), 400
-        steps = solve(formula)
+        steps, result = solve(formula)
         return jsonify({
-            "steps": steps
+            "steps": steps,
+            "result": result,
         })
 
     except Exception as e:
