@@ -5,7 +5,6 @@ import {useNavigate} from 'react-router-dom';
 
 const LogicFormulaApp = () => {
     const [formula, setFormula] = useState('');
-    const [result, setResult] = useState(null);
     const [steps, setSteps] = useState([]);
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -67,13 +66,13 @@ const LogicFormulaApp = () => {
             {error && <p className="error">{error}</p>}
 
             {steps.length > 0 && (
-                <div className="steps-container">
-                    <h2 className="sub-header">Steps</h2>
-                    <ol className="steps-list">
-                        {steps.map((step) => (
-                            <li className="step-item">{step}</li>
+                <div>
+                    <h2 className="sub-header">Postup řešení</h2>
+                    <ul className="list-group list-group-flush">
+                        {steps.map(step => (
+                            <div className="list-group-item">{step}</div>
                         ))}
-                    </ol>
+                    </ul>
                 </div>
             )}
         </div>

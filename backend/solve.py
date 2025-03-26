@@ -2,6 +2,7 @@ from sympy import symbols  # type: ignore
 from sympy.logic.boolalg import to_cnf  # type: ignore
 from sympy.logic.inference import satisfiable  # type: ignore
 import re
+import copy
 
 OPERATOR_DICT = {
     "¬": "~",
@@ -21,26 +22,89 @@ REVERSE_OPERATOR_DICT = {
 REVERSE_OPERATOR_TRANSLATOR = str.maketrans(REVERSE_OPERATOR_DICT)
 
 
+def get_bracket_index(start, stop, expr, br_type):
+    br_count = 1
+    br_index = 0
+    first_br = "("
+    second_br = ")"
+    step = 1
+
+    if br_type == "open":
+        first_br = "("
+        second_br = ")"
+        step = -1
+    elif br_type == "close":
+        first_br = ")"
+        second_br = "("
+        step = 1
+
+    for index in range(start, stop, step):
+        if expr[index] == first_br:
+            br_count -= 1
+            if br_count < 1:
+                br_index = index
+                break
+        elif expr[index] == second_br:
+            br_count += 1
+    return br_index
+
 def rewrite_equivalence(expression):
-    pattern = r"(\w+)\s*↔\s*(\w+)"
-    return re.sub(pattern, r"(\1 | ~\2) & (~\1 | \2)", expression)
+    eq_count = expression.count("↔")
+    for i in range(0, eq_count):
+        for index, char in enumerate(expression):
+            if char == "↔":
+                print(expression)
+                if expression[index - 1] == ")" and expression[index + 1] == "(":
+                    first_br_start = get_bracket_index(index - 2, 0, expression, "open")
+                    second_br_end = get_bracket_index(index + 2, len(expression), expression, "close")
+                    first_br = "(" + "~" + expression[first_br_start:index] + "|" + expression[index + 1:second_br_end + 1] + ")"
+                    second_br = "(" + expression[first_br_start:index] + "|" + "~" + expression[index + 1:second_br_end + 1] + ")"
+                    expression = expression[0:first_br_start] + first_br + "&" + second_br + expression[second_br_end + 1:]
+                    break
+
+                if expression[index - 1] == ")" and expression[index + 1] != "(":
+                    first_br_start = get_bracket_index(index - 2, 0, expression, "open")
+                    first_br = "(" + "~" + expression[first_br_start:index] + "|" + expression[index + 1:] + ")"
+                    second_br = "(" + expression[first_br_start:index] + "|" + "~" + expression[index + 1:] + ")"
+                    expression = expression[0:first_br_start] + first_br + "&" + second_br + expression[index + 2:]
+                    break
+
+                if expression[index - 1] != ")" and expression[index + 1] == "(":
+                    second_br_end = get_bracket_index(index + 2, len(expression), expression, "close")
+                    first_br = "(" + "~" + expression[index - 1] + "|" + expression[index + 1:second_br_end + 1] + ")"
+                    second_br = "(" + expression[index - 1] + "|" + "~" + expression[index + 1:second_br_end + 1] + ")"
+                    expression = expression[0:index - 1] + first_br + "&" + second_br + expression[second_br_end + 1:]
+                    break
+
+                if expression[index - 1] != ")" and expression[index + 1] != "(":
+                    first_br = "(" + "~" + expression[index - 1] + "|" + expression[index + 1] + ")"
+                    second_br = "(" + expression[index - 1] + "|" + "~" + expression[index + 1] + ")"
+                    expression = expression[0:index - 1] + first_br + "&" + second_br + expression[index + 2:]
+                    break
+
+    return expression
 
 
 def solve(formula: str):
+    steps = []
     formated_formula = prepare_for_cnf(formula)
+    steps.append("Rozložení ekvivalencí: %s" % formated_formula.translate(REVERSE_OPERATOR_TRANSLATOR))
     found_symbols = init_symbols(formated_formula)
     expression = eval(formated_formula, found_symbols)
     cnf = to_cnf(expression)
     cnf_str = str(cnf)
     back_translated_formula = cnf_str.translate(REVERSE_OPERATOR_TRANSLATOR)
+    steps.append("Převod do kunjuktivní normální formy: %s" % back_translated_formula)
     clause_list = split_to_list_of_literals(back_translated_formula)
-    steps = resolution(clause_list)
+    steps.extend(resolution(clause_list))
     return steps
 
 
 def prepare_for_cnf(formula: str) -> str:
     translated_formula = formula.translate(OPERATOR_TRANSLATOR)
+    print(translated_formula)
     formula_without_equivalence = rewrite_equivalence(translated_formula)
+    print(formula_without_equivalence)
     return formula_without_equivalence
 
 
@@ -63,10 +127,11 @@ def resolution(clauses):
     if clauses[0][0] == "True":
         return ["Formule je tautologie, není potřeba použít rezoluční metodu."]
     else:
-        steps = ["Množina klauzulí: %s" % clauses_to_string(clauses)]
+        steps = ["Použití rezoluční metody:"]
+        steps.append("Množina klauzulí: %s" % clauses_to_string(clauses))
 
     def update_clauses(clause1, clause2):
-        resolvent = make_resolvent(clause1, clause2)
+        resolvent = make_resolvent(copy.deepcopy(clause1), copy.deepcopy(clause2))
         steps.append("Z klauzulí: " + clauses_to_string([clause1]) + " a " + clauses_to_string([clause2]) + " vznikne resolventa: " + clauses_to_string([resolvent]))
         clauses.remove(clause1)
         clauses.remove(clause2)
@@ -77,9 +142,11 @@ def resolution(clauses):
     while True:
         if found:
             found = False
-        for clause in clauses:
+        for i, clause in enumerate(clauses):
             for literal in clause:
-                for compared_clause in clauses:
+                for j, compared_clause in enumerate(clauses):
+                    if i == j:
+                        break
                     for compared_literal in compared_clause:
                         if len(literal) == 2 and len(compared_literal) == 1:
                             if literal[1] == compared_literal:
@@ -121,5 +188,5 @@ def clauses_to_string(clauses: list[list[str]]) -> str:
     clauses_str = ""
     for clause in clauses:
         clauses_str += "{"
-        clauses_str += ",".join(clause) + "},"
+        clauses_str += ", ".join(clause) + "},"
     return clauses_str[:-1]
