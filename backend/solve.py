@@ -17,9 +17,8 @@ REVERSE_OPERATOR_DICT = {
     "~": "¬",
     "&": "∧",
     "|": "∨",
+    ">>": "→",
 }
-
-REVERSE_OPERATOR_TRANSLATOR = str.maketrans(REVERSE_OPERATOR_DICT)
 
 
 def get_bracket_index(start, stop, expr, br_type):
@@ -48,52 +47,72 @@ def get_bracket_index(start, stop, expr, br_type):
             br_count += 1
     return br_index
 
+
+def get_literal_index(expr, index, side):
+    if side == "left":
+        if expr[index - 2] == "~":
+            return index - 2
+        else:
+            return index - 1
+    elif side == "right":
+        if expr[index + 1] == "~":
+            return index + 2
+        else:
+            return index + 1
+
+def format_expression_without_eq(expr, eq_index, first_part_index, second_part_index):
+    first_part = "(" + "~" + expr[first_part_index:eq_index] + "|" + expr[eq_index + 1:second_part_index + 1] + ")"
+    second_part = "(" + expr[first_part_index:eq_index] + "|" + "~" + expr[eq_index + 1:second_part_index + 1] + ")"
+    return expr[0:first_part_index] + first_part + "&" + second_part + expr[second_part_index + 1:]
+
 def rewrite_equivalence(expression):
     eq_count = expression.count("↔")
-    for i in range(0, eq_count):
+    for i in range(0, eq_count + 1):
         for index, char in enumerate(expression):
             if char == "↔":
                 print(expression)
                 if expression[index - 1] == ")" and expression[index + 1] == "(":
-                    first_br_start = get_bracket_index(index - 2, 0, expression, "open")
-                    second_br_end = get_bracket_index(index + 2, len(expression), expression, "close")
-                    first_br = "(" + "~" + expression[first_br_start:index] + "|" + expression[index + 1:second_br_end + 1] + ")"
-                    second_br = "(" + expression[first_br_start:index] + "|" + "~" + expression[index + 1:second_br_end + 1] + ")"
-                    expression = expression[0:first_br_start] + first_br + "&" + second_br + expression[second_br_end + 1:]
+                    open_bracket_index = get_bracket_index(index - 2, 0, expression, "open")
+                    close_bracket_index = get_bracket_index(index + 2, len(expression), expression, "close")
+                    expression = format_expression_without_eq(expression, index, open_bracket_index, close_bracket_index)
                     break
 
                 if expression[index - 1] == ")" and expression[index + 1] != "(":
-                    first_br_start = get_bracket_index(index - 2, 0, expression, "open")
-                    first_br = "(" + "~" + expression[first_br_start:index] + "|" + expression[index + 1:] + ")"
-                    second_br = "(" + expression[first_br_start:index] + "|" + "~" + expression[index + 1:] + ")"
-                    expression = expression[0:first_br_start] + first_br + "&" + second_br + expression[index + 2:]
+                    open_bracket_index = get_bracket_index(index - 2, 0, expression, "open")
+                    right_literal_index = get_literal_index(expression, index, "right")
+                    expression = format_expression_without_eq(expression, index, open_bracket_index, right_literal_index)
                     break
 
                 if expression[index - 1] != ")" and expression[index + 1] == "(":
-                    second_br_end = get_bracket_index(index + 2, len(expression), expression, "close")
-                    first_br = "(" + "~" + expression[index - 1] + "|" + expression[index + 1:second_br_end + 1] + ")"
-                    second_br = "(" + expression[index - 1] + "|" + "~" + expression[index + 1:second_br_end + 1] + ")"
-                    expression = expression[0:index - 1] + first_br + "&" + second_br + expression[second_br_end + 1:]
+                    left_literal_index = get_literal_index(expression, index, "left")
+                    close_bracket_index = get_bracket_index(index + 2, len(expression), expression, "close")
+                    expression = format_expression_without_eq(expression, index, left_literal_index, close_bracket_index)
                     break
 
                 if expression[index - 1] != ")" and expression[index + 1] != "(":
-                    first_br = "(" + "~" + expression[index - 1] + "|" + expression[index + 1] + ")"
-                    second_br = "(" + expression[index - 1] + "|" + "~" + expression[index + 1] + ")"
-                    expression = expression[0:index - 1] + first_br + "&" + second_br + expression[index + 2:]
+                    left_literal_index = get_literal_index(expression, index, "left")
+                    right_literal_index = get_literal_index(expression, index, "right")
+                    expression = format_expression_without_eq(expression, index, left_literal_index, right_literal_index)
                     break
 
+    return expression
+
+
+def translate_back(expression: str) -> str:
+    for key, value in REVERSE_OPERATOR_DICT.items():
+        expression = expression.replace(key, value)
     return expression
 
 
 def solve(formula: str):
     steps = []
     formated_formula = prepare_for_cnf(formula)
-    steps.append("Rozložení ekvivalencí: %s" % formated_formula.translate(REVERSE_OPERATOR_TRANSLATOR))
+    steps.append("Rozložení ekvivalencí: %s" % translate_back(formated_formula))
     found_symbols = init_symbols(formated_formula)
     expression = eval(formated_formula, found_symbols)
     cnf = to_cnf(expression)
     cnf_str = str(cnf)
-    back_translated_formula = cnf_str.translate(REVERSE_OPERATOR_TRANSLATOR)
+    back_translated_formula = translate_back(cnf_str)
     steps.append("Převod do kunjuktivní normální formy: %s" % back_translated_formula)
     clause_list = split_to_list_of_literals(back_translated_formula)
     resolution_steps, result = resolution(clause_list)
