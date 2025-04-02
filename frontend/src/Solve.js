@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import './App.css';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 
 const LogicFormulaApp = () => {
     const [formula, setFormula] = useState('');
@@ -33,7 +33,7 @@ const LogicFormulaApp = () => {
         try {
             const response = await axios.post(
                 'http://localhost:5000/api/solve',
-                { formula },
+                {formula},
                 {
                     headers: {
                         Authorization: `Bearer ${token}`, // Include the JWT token
@@ -61,11 +61,9 @@ const LogicFormulaApp = () => {
         const start = input.selectionStart;
         const end = input.selectionEnd;
 
-        // Insert the symbol at the current cursor position
         const newFormula = formula.substring(0, start) + symbol + formula.substring(end);
         setFormula(newFormula);
 
-        // Move cursor after inserted symbol
         setTimeout(() => {
             input.selectionStart = input.selectionEnd = start + symbol.length;
             input.focus();
@@ -73,18 +71,26 @@ const LogicFormulaApp = () => {
     };
 
     return (
-        <div className="container-sm shadow p-3 mb-5 bg-body-tertiary rounded" style={{ width: "70%", marginTop: "2%" }}>
+        <div className="container-sm shadow p-3 mb-5 bg-body-tertiary rounded" style={{width: "70%", marginTop: "2%"}}>
             <form onSubmit={handleSubmit}>
                 <div className="input-group mb-3">
                     <input type="text" id="formula" value={formula} onChange={(e) => setFormula(e.target.value)}
-                        className="form-control" placeholder="Enter formula"
+                           className="form-control" placeholder="Enter formula"
                     />
                     <button type="submit" className="btn btn-success">Solve</button>
                 </div>
                 <div className="input-group mb-3">
                     {["¬", "∧", "∨", "→", "↔", "(", ")"].map((symbol) => (
                         <button key={symbol} type="button" className="btn btn-light btn-outline-success"
-                            onClick={() => insertSymbol(symbol)}>
+                                onClick={() => insertSymbol(symbol)}>
+                            {symbol}
+                        </button>
+                    ))}
+                </div>
+                <div className="input-group mb-3">
+                    {["A", "B", "C", "D", "E", "F", "G"].map((symbol) => (
+                        <button key={symbol} type="button" className="btn btn-light btn-outline-success"
+                                onClick={() => insertSymbol(symbol)}>
                             {symbol}
                         </button>
                     ))}
