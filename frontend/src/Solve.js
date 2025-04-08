@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import './App.css';
 import {useNavigate} from 'react-router-dom';
+import {solveFormula} from "./Api";
 
 const LogicFormulaApp = () => {
     const [formula, setFormula] = useState('');
@@ -31,15 +32,7 @@ const LogicFormulaApp = () => {
         }
 
         try {
-            const response = await axios.post(
-                'http://localhost:5000/api/solve',
-                {formula},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`, // Include the JWT token
-                    },
-                }
-            );
+            const response = await solveFormula(formula, token);
             setSteps(response.data.steps);
             setResult(response.data.result);
         } catch (err) {

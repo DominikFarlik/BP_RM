@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 bcrypt = Bcrypt(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:bprm@localhost/bprm'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'jwt_secret_key'
 
@@ -18,14 +18,51 @@ jwt = JWTManager(app)
 
 
 class User(db.Model):  # type: ignore
-    id = db.Column(db.Integer, primary_key=True)
+    userID = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
+"""
+class FormulaHistory(db.Model):  # type: ignore
+    __tablename__ = 'formula_history'
 
-# Initialize database
+    id = db.Column(db.Integer, primary_key=True)
+    formula = db.Column(db.Text, nullable=False)
+    result = db.Column(db.String(50), nullable=True)
+    timestamp = db.Column(db.DateTime, default=db.func.now())
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('formulas', lazy=True))
+"""
+
+
+# Inicializace databáze
 with app.app_context():
     db.create_all()
+
+"""
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    data = request.get_json()
+    username = data.get('username')
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    history = [
+        {
+            "userID": entry.id,
+            "formula": entry.formula,
+            "result": entry.result,
+            "timestamp": entry.timestamp.isoformat(),
+        }
+        for entry in user.formulas
+    ]
+
+    return jsonify(history), 200
+"""
+
 
 
 @app.route('/api/solve', methods=['POST'])
@@ -45,7 +82,6 @@ def solve_formula():
         return jsonify({"error": str(e)}), 500
 
 
-# API: Register user
 @app.route('/api/register', methods=['POST'])
 def register():
     try:
@@ -69,7 +105,6 @@ def register():
         return jsonify({"error": str(e)}), 500
 
 
-# API: Login user
 @app.route('/api/login', methods=['POST'])
 def login():
     try:
@@ -85,7 +120,6 @@ def login():
         if not user or not bcrypt.check_password_hash(user.password, password):
             return jsonify({"error": "Invalid username or password."}), 401
 
-        # Create JWT token
         access_token = create_access_token(identity={'username': user.username})
         return jsonify({
             "message": "Login successful.",
@@ -97,4 +131,3 @@ def login():
 
 if __name__ == '__main__':
     app.run(debug=True)
-    #solve("(A∨B)↔(C∨D)")
